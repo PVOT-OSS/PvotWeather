@@ -7,9 +7,12 @@ One forecast from two sources
 
 Know what is coming
 • Rain starting or stopping in the next two hours, from radar in the Nordics and from 15-minute forecasts elsewhere
+• Rain and snow amounts, pressure, cloud layers, thunder, fog, sunshine hours and yesterday's weather
+• How sure the forecast is: MET Norway's likely range and a 40-run ensemble, side by side
 • Weather warnings from MET Norway in Norway
 • How today compares with the usual high for the date over the past 10 years
-• Air quality (US AQI and PM2.5)
+• Air quality and pollutants from two sources, pollen in Europe
+• The moon, the sea (waves, sea temperature, currents) and river flow
 
 Your places
 • Search for any city, or use your location without Google services
@@ -18,5 +21,5 @@ Your places
 Private and open
 • No ads, no accounts, no tracking
 • The app only fetches while you use it
-• Weather data by Open-Meteo.com and MET Norway (CC BY 4.0); place names from GeoNames; past temperatures from ERA5 and air quality from CAMS (Copernicus)
+• Weather data by Open-Meteo.com and MET Norway (CC BY 4.0); place names from GeoNames; past temperatures from ERA5, air quality from CAMS (Copernicus) and river flow from GloFAS
 • Free and open source under the Apache-2.0 licence: github.com/PVOT-OSS/PvotWeather
