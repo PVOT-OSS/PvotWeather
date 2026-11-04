@@ -15,6 +15,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -42,10 +43,12 @@ class ForecastRepositoryTest {
         }
     private val dao = FakeDao()
     private val calls = mutableListOf<String>()
+    private val models = mutableListOf<String?>()
     private var metStatus = HttpStatusCode.OK
 
     private val engine = MockEngine { request ->
         calls += request.url.host
+        models += request.url.parameters["models"]
         when (request.url.host) {
             "api.open-meteo.com" -> respond(OM_BODY, HttpStatusCode.OK)
             else ->
@@ -128,6 +131,24 @@ class ForecastRepositoryTest {
         val result = repository.refresh(place, providers = setOf(Provider.OPEN_METEO))
         assertEquals(RefreshResult.NotDue, result[Provider.MET_NORWAY])
         assertEquals(listOf("api.open-meteo.com"), calls)
+    }
+
+    @Test
+    fun independentSourcesUseEcmwfOnlyInTheNordics() = runTest {
+        val independent =
+            ForecastRepository(
+                dao,
+                OpenMeteoApi(client),
+                MetNorwayApi(client),
+                clock = clock,
+                independentSources = flowOf(true),
+            )
+        val oslo = Place.of("Oslo", null, 59.91, 10.75, null, ZoneId.of("Europe/Oslo"))
+        independent.refresh(oslo, providers = setOf(Provider.OPEN_METEO))
+        independent.refresh(place, providers = setOf(Provider.OPEN_METEO))
+        assertEquals(listOf("ecmwf_ifs025", null), models)
+        assertTrue((oslo.key to "OPEN_METEO@ecmwf_ifs025") in dao.rows)
+        assertTrue((place.key to "OPEN_METEO") in dao.rows)
     }
 
     private class FakeDao : ForecastCacheDao {

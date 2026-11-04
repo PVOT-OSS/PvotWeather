@@ -23,6 +23,11 @@ class WeatherPreferences(context: Context) {
 
     val windUnit: Flow<WindUnit> = observe { enumOr(WIND_UNIT, WindUnit.KILOMETRES_PER_HOUR) }
 
+    val independentSources: Flow<Boolean> = observe { getBoolean(INDEPENDENT_SOURCES, false) }
+
+    fun setIndependentSources(value: Boolean) =
+        prefs.edit().putBoolean(INDEPENDENT_SOURCES, value).apply()
+
     fun selectPlace(id: Long) = prefs.edit().putLong(SELECTED_PLACE, id).apply()
 
     fun setTemperatureUnit(unit: TemperatureUnit) =
@@ -47,5 +52,6 @@ class WeatherPreferences(context: Context) {
         const val SELECTED_PLACE = "selected_place"
         const val TEMPERATURE_UNIT = "temperature_unit"
         const val WIND_UNIT = "wind_unit"
+        const val INDEPENDENT_SOURCES = "independent_sources"
     }
 }

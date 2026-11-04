@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -87,6 +88,10 @@ class ForecastViewModel(
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ForecastUiState())
+
+    init {
+        viewModelScope.launch { preferences.independentSources.drop(1).collect { refresh() } }
+    }
 
     fun refresh(force: Boolean = false) {
         if (refresh.value.refreshing) return
