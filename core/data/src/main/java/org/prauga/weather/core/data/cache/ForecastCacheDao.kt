@@ -23,4 +23,7 @@ interface ForecastCacheDao {
             "WHERE place_key = :placeKey AND provider = :provider"
     )
     suspend fun touch(placeKey: String, provider: String, fetchedAt: Long, expiresAt: Long?)
+
+    @Query("DELETE FROM forecast_cache WHERE place_key = :placeKey")
+    suspend fun delete(placeKey: String)
 }

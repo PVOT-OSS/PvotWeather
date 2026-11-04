@@ -148,6 +148,11 @@ class ForecastRepositoryTest {
             }
             flow.value++
         }
+
+        override suspend fun delete(placeKey: String) {
+            rows.keys.removeAll { it.first == placeKey }
+            flow.value++
+        }
     }
 
     private companion object {
