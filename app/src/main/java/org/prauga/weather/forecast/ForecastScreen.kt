@@ -96,6 +96,8 @@ import org.prauga.weather.core.model.Place
 import org.prauga.weather.core.model.Provider
 import org.prauga.weather.core.model.Sourced
 import org.prauga.weather.placeTitle
+import org.prauga.weather.settings.LocalUnits
+import org.prauga.weather.settings.symbol
 
 private val HighColor = Color(0xFFFF8A3D)
 private val LowColor = Color(0xFF4FA3E0)
@@ -198,6 +200,13 @@ fun ForecastScreen(
         }
     }
 }
+
+@Composable
+private fun degrees(celsius: Double): Int = Formats.degrees(celsius, LocalUnits.current.temperature)
+
+@Composable
+private fun wind(metresPerSecond: Double): Int =
+    Formats.wind(metresPerSecond, LocalUnits.current.wind)
 
 @Composable
 private fun Status(header: @Composable () -> Unit, content: @Composable () -> Unit) {
@@ -321,7 +330,7 @@ private fun NowBlock(forecast: Forecast) {
                 }
             ) {
                 Text(
-                    Formats.degrees(temperature.value).toString(),
+                    degrees(temperature.value).toString(),
                     style =
                         TextStyle(
                             fontSize = 104.sp,
@@ -331,7 +340,7 @@ private fun NowBlock(forecast: Forecast) {
                         ),
                 )
                 Text(
-                    stringResource(R.string.celsius_unit),
+                    stringResource(LocalUnits.current.temperature.symbol),
                     modifier = Modifier.padding(top = 16.dp, start = 4.dp),
                     style = TextStyle(fontSize = 40.sp, fontWeight = FontWeight.Light),
                 )
@@ -361,7 +370,12 @@ private fun NowBlock(forecast: Forecast) {
 
 @Composable
 private fun HighLow(arrow: String, value: Sourced, description: Int) {
-    val text = stringResource(R.string.degrees_celsius, Formats.degrees(value.value))
+    val text =
+        stringResource(
+            R.string.degrees_unit,
+            degrees(value.value),
+            stringResource(LocalUnits.current.temperature.symbol),
+        )
     val spoken = stringResource(description, text)
     Text(
         "$arrow $text",
@@ -372,7 +386,8 @@ private fun HighLow(arrow: String, value: Sourced, description: Int) {
 
 @Composable
 private fun sourcesLine(value: Sourced): String {
-    fun Double?.text() = this?.let { "%.1f°".format(it) } ?: "–"
+    val unit = LocalUnits.current.temperature
+    fun Double?.text() = this?.let { "%.1f°".format(unit.fromCelsius(it)) } ?: "–"
     return stringResource(R.string.sources_values, value.openMeteo.text(), value.metNorway.text())
 }
 
@@ -446,9 +461,8 @@ private fun HourColumn(label: String, hour: HourPoint, highlighted: Boolean) {
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                hour.temperature?.let {
-                    stringResource(R.string.degrees, Formats.degrees(it.value))
-                } ?: "–",
+                hour.temperature?.let { stringResource(R.string.degrees, degrees(it.value)) }
+                    ?: "–",
                 style = MaterialTheme.typography.titleSmall,
             )
             if (differs) DisagreementDot(Modifier.padding(start = 2.dp))
@@ -522,18 +536,16 @@ private fun DayRow(index: Int, day: DayPoint, forecast: Forecast) {
             color = RainColor,
         )
         Text(
-            day.temperatureMax?.let {
-                "↑" + stringResource(R.string.degrees, Formats.degrees(it.value))
-            } ?: "",
+            day.temperatureMax?.let { "↑" + stringResource(R.string.degrees, degrees(it.value)) }
+                ?: "",
             modifier = Modifier.width(44.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = HighColor,
         )
         Sparkline(temperatures, Modifier.weight(1f).height(22.dp).padding(horizontal = 8.dp))
         Text(
-            day.temperatureMin?.let {
-                "↓" + stringResource(R.string.degrees, Formats.degrees(it.value))
-            } ?: "",
+            day.temperatureMin?.let { "↓" + stringResource(R.string.degrees, degrees(it.value)) }
+                ?: "",
             modifier = Modifier.width(44.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = LowColor,
@@ -577,7 +589,7 @@ private fun Tiles(forecast: Forecast) {
                 add { m ->
                     Tile(
                         stringResource(R.string.feels_like),
-                        stringResource(R.string.degrees, Formats.degrees(apparent.value)),
+                        stringResource(R.string.degrees, degrees(apparent.value)),
                         stringResource(Formats.feelsLike(actual.value, apparent.value)),
                         m,
                     )
@@ -626,7 +638,7 @@ private fun Tiles(forecast: Forecast) {
                         current.dewPoint?.let {
                             stringResource(
                                 R.string.dew_point,
-                                stringResource(R.string.degrees, Formats.degrees(it.value)),
+                                stringResource(R.string.degrees, degrees(it.value)),
                             )
                         } ?: "",
                         m,
@@ -637,13 +649,22 @@ private fun Tiles(forecast: Forecast) {
                 add { m ->
                     val from =
                         current.windDirection?.let { stringResource(Formats.compass(it.value)) }
-                    val gust = current.windGust?.value?.let(Formats::kmh)
+                    val gust = current.windGust?.value?.let { wind(it) }
                     Tile(
                         stringResource(R.string.wind),
-                        stringResource(R.string.wind_speed, Formats.kmh(w.value)),
+                        stringResource(
+                            R.string.wind_speed,
+                            wind(w.value),
+                            stringResource(LocalUnits.current.wind.symbol),
+                        ),
                         when {
                             from != null && gust != null ->
-                                stringResource(R.string.wind_from_gusts, from, gust)
+                                stringResource(
+                                    R.string.wind_from_gusts,
+                                    from,
+                                    gust,
+                                    stringResource(LocalUnits.current.wind.symbol),
+                                )
                             from != null -> stringResource(R.string.wind_from, from)
                             else -> ""
                         },
