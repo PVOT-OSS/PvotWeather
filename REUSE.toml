@@ -36,3 +36,15 @@ path = ["fastlane/metadata/android/**/*.txt"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "fastlane/metadata/android/**/phoneScreenshots/*.png"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["fastlane/metadata/android/**/icon.png", "fastlane/metadata/android/**/featureGraphic.png"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = ["2026 Shivansh Pandey <shivanshp987@gmail.com>", "2026 Saalim Quadri <danascape@gmail.com>"]
+SPDX-License-Identifier = "Apache-2.0"
