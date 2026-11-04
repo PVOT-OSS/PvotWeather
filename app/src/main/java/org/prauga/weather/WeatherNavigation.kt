@@ -24,6 +24,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import org.prauga.weather.about.AboutScreen
+import org.prauga.weather.air.AirQualityScreen
+import org.prauga.weather.air.AirQualityViewModel
 import org.prauga.weather.compare.CompareScreen
 import org.prauga.weather.compare.CompareViewModel
 import org.prauga.weather.core.model.TemperatureUnit
@@ -46,6 +48,8 @@ import org.prauga.weather.settings.Units
 @Serializable data object AboutKey : NavKey
 
 @Serializable data object CompareKey : NavKey
+
+@Serializable data object AirQualityKey : NavKey
 
 @Composable
 fun WeatherNavigation(container: AppContainer) {
@@ -87,6 +91,7 @@ fun WeatherNavigation(container: AppContainer) {
                                         MenuItem(R.string.settings) { backStack.add(SettingsKey) },
                                         MenuItem(R.string.about) { backStack.add(AboutKey) },
                                     ),
+                                onOpenAirQuality = { backStack.add(AirQualityKey) },
                             )
                         }
                         val windowWidth =
@@ -113,12 +118,26 @@ fun WeatherNavigation(container: AppContainer) {
                             onBack = { backStack.removeLastOrNull() },
                         )
                     }
+                    entry<AirQualityKey> {
+                        AirQualityScreen(
+                            viewModel =
+                                viewModel {
+                                    AirQualityViewModel(
+                                        container.extras,
+                                        container.places,
+                                        container.preferences,
+                                    )
+                                },
+                            onBack = { backStack.removeLastOrNull() },
+                        )
+                    }
                     entry<CompareKey> {
                         CompareScreen(
                             viewModel =
                                 viewModel {
                                     CompareViewModel(
                                         container.forecasts,
+                                        container.extras,
                                         container.places,
                                         container.preferences,
                                     )
