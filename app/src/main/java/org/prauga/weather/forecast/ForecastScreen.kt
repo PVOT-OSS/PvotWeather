@@ -179,6 +179,7 @@ fun ForecastScreen(
                                 -size.height
                             }
                     },
+                    running = listState.firstVisibleItemIndex == 0,
                 )
             }
             PullToRefreshBox(
