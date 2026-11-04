@@ -16,6 +16,8 @@ import org.prauga.weather.R
 import org.prauga.weather.core.data.Extras
 import org.prauga.weather.core.model.Forecast
 import org.prauga.weather.core.model.HourPoint
+import org.prauga.weather.settings.LocalUnits
+import org.prauga.weather.settings.symbol
 
 private typealias TileContent = @Composable (Modifier) -> Unit
 
@@ -31,7 +33,7 @@ internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = 
         add { m ->
             Tile(
                 stringResource(R.string.pressure),
-                stringResource(R.string.pressure_hpa, pressure.value.roundToInt()),
+                pressureText(pressure.value),
                 stringResource(Formats.pressureTrend(pressure.value, later)),
                 m,
             )
@@ -96,11 +98,8 @@ internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = 
         add { m ->
             Tile(
                 stringResource(R.string.snow),
-                stringResource(R.string.snow_depth_cm, (depth * 100).roundToInt()),
-                stringResource(
-                    R.string.snow_falling,
-                    String.format(java.util.Locale.getDefault(), "%.1f", falling),
-                ),
+                snowDepthText(depth),
+                stringResource(R.string.snow_falling, snowfall(falling), snowUnit()),
                 m,
                 source = stringResource(R.string.open_meteo_only),
             )
@@ -153,12 +152,7 @@ internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = 
         add { m ->
             Tile(
                 stringResource(R.string.sea),
-                sea.waveHeight?.let {
-                    stringResource(
-                        R.string.waves_m,
-                        String.format(java.util.Locale.getDefault(), "%.1f", it.value),
-                    )
-                }
+                sea.waveHeight?.let { wavesText(it.value) }
                     ?: sea.seaTemperature?.let {
                         stringResource(R.string.degrees, degrees(it.value))
                     }
@@ -179,7 +173,8 @@ internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = 
                         sea.currentSpeed?.let {
                             stringResource(
                                 R.string.sea_current,
-                                String.format(java.util.Locale.getDefault(), "%.1f", it),
+                                Formats.wind(it, LocalUnits.current.wind).toString(),
+                                stringResource(LocalUnits.current.wind.symbol),
                             )
                         },
                     )
@@ -193,11 +188,11 @@ internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = 
         add { m ->
             Tile(
                 stringResource(R.string.river),
-                stringResource(R.string.discharge, Formats.flow(river.discharge)),
+                stringResource(R.string.value_unit, flowValue(river.discharge), flowUnit()),
                 listOfNotNull(
                         river.mean?.let { stringResource(Formats.riverLevel(river.discharge, it)) },
                         river.mean?.let {
-                            stringResource(R.string.discharge_usual, Formats.flow(it))
+                            stringResource(R.string.discharge_usual, flowValue(it), flowUnit())
                         },
                     )
                     .joinToString("\n"),
@@ -241,18 +236,14 @@ private fun precipitationTile(next24: List<HourPoint>, todaySum: Double?): TileC
     return { m ->
         Tile(
             stringResource(R.string.precipitation),
-            stringResource(R.string.mm, Formats.millimetres(total)),
+            rainText(total),
             listOfNotNull(
                     stringResource(R.string.precipitation_next_24),
                     range?.let { (lo, hi) ->
-                        stringResource(
-                            R.string.precipitation_range,
-                            Formats.millimetres(lo),
-                            Formats.millimetres(hi),
-                        )
+                        stringResource(R.string.precipitation_range, rain(lo), rain(hi), rainUnit())
                     },
                     todaySum?.let {
-                        stringResource(R.string.precipitation_today, Formats.millimetres(it))
+                        stringResource(R.string.precipitation_today, rain(it), rainUnit())
                     },
                 )
                 .joinToString("\n"),

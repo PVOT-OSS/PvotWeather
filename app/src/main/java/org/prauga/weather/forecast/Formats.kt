@@ -73,6 +73,41 @@ object Formats {
         if (value >= 10) value.roundToInt().toString()
         else String.format(Locale.getDefault(), "%.1f", value)
 
+    fun precipitation(mm: Double, imperial: Boolean): String =
+        if (imperial) decimals(mm / MM_PER_INCH, 2) else millimetres(mm)
+
+    fun snowDepth(metres: Double, imperial: Boolean): String =
+        (if (imperial) metres * INCHES_PER_METRE else metres * 100).roundToInt().toString()
+
+    fun snowfall(cm: Double, imperial: Boolean): String =
+        decimals(if (imperial) cm / CM_PER_INCH else cm, 1)
+
+    fun pressure(hPa: Double, imperial: Boolean): String =
+        if (imperial) decimals(hPa * INHG_PER_HPA, 2) else hPa.roundToInt().toString()
+
+    fun waves(metres: Double, imperial: Boolean): String =
+        decimals(if (imperial) metres * FEET_PER_METRE else metres, 1)
+
+    fun visibility(metres: Double, imperial: Boolean): String {
+        if (!imperial) return km(metres)
+        val miles = metres / METRES_PER_MILE
+        return if (miles >= 10) miles.roundToInt().toString() else decimals(miles, 1)
+    }
+
+    fun flow(m3s: Double, imperial: Boolean): String =
+        flow(if (imperial) m3s * CUBIC_FEET_PER_M3 else m3s)
+
+    private fun decimals(value: Double, places: Int): String =
+        String.format(Locale.getDefault(), "%.${places}f", value)
+
+    private const val MM_PER_INCH = 25.4
+    private const val CM_PER_INCH = 2.54
+    private const val INCHES_PER_METRE = 39.3701
+    private const val INHG_PER_HPA = 0.0295300
+    private const val FEET_PER_METRE = 3.28084
+    private const val METRES_PER_MILE = 1609.344
+    private const val CUBIC_FEET_PER_M3 = 35.3147
+
     fun hours(seconds: Double): String = String.format(Locale.getDefault(), "%.1f", seconds / 3600)
 
     fun flow(value: Double): String =
