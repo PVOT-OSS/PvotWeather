@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -39,11 +38,9 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,6 +84,11 @@ import com.prauga.pvot.coreui.PvotEmptyContent
 import com.prauga.pvot.coreui.PvotErrorContent
 import com.prauga.pvot.coreui.PvotLoadingContent
 import com.prauga.pvot.designsystem.components.PvotCard
+import com.prauga.pvot.designsystem.components.PvotScreen
+import com.prauga.pvot.designsystem.components.button.PvotButton
+import com.prauga.pvot.designsystem.components.button.PvotButtonStyle
+import com.prauga.pvot.designsystem.components.button.PvotIconButton
+import com.prauga.pvot.designsystem.components.button.PvotIconButtonDefaults
 import java.time.Instant
 import java.time.ZoneId
 import org.prauga.weather.R
@@ -252,12 +254,12 @@ private fun PlaceHeader(place: Place?, onOpenPlaces: () -> Unit, menu: List<Menu
             )
         }
         Box {
-            IconButton(onClick = { menuOpen = true }) {
-                Icon(
-                    painterResource(R.drawable.ic_menu),
-                    contentDescription = stringResource(R.string.menu),
-                )
-            }
+            PvotIconButton(
+                painterResource(R.drawable.ic_menu),
+                stringResource(R.string.menu),
+                { menuOpen = true },
+                colors = PvotIconButtonDefaults.plainColors(),
+            )
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 menu.forEach { item ->
                     DropdownMenuItem(
@@ -291,7 +293,8 @@ private fun ForecastContent(
     header: @Composable () -> Unit,
 ) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
-    LazyColumn(
+    PvotScreen(
+        horizontalAlignment = Alignment.Start,
         modifier = Modifier.fillMaxSize(),
         state = listState,
         contentPadding =
@@ -500,20 +503,19 @@ private fun DaysCard(forecast: Forecast) {
             )
             days.forEachIndexed { index, day -> DayRow(index, day, forecast) }
             if (forecast.days.size > 7) {
-                TextButton(
-                    onClick = { showAll = !showAll },
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                ) {
-                    Text(
+                PvotButton(
+                    text =
                         if (showAll) stringResource(R.string.days_show_fewer)
                         else
                             pluralStringResource(
                                 R.plurals.days_show_all,
                                 forecast.days.size,
                                 forecast.days.size,
-                            )
-                    )
-                }
+                            ),
+                    onClick = { showAll = !showAll },
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    style = PvotButtonStyle.Text,
+                )
             }
             if (showAll && firstSingleSource != null && Provider.MET_NORWAY in forecast.providers) {
                 Text(
