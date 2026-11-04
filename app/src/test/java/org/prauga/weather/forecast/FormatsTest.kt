@@ -45,4 +45,19 @@ class FormatsTest {
         assertEquals(R.string.aqi_moderate, Formats.aqiLevel(84))
         assertEquals(R.string.aqi_hazardous, Formats.aqiLevel(301))
     }
+
+    @Test
+    fun usUnitsFollowFahrenheit() {
+        assertEquals("0.50", Formats.precipitation(12.7, imperial = true))
+        assertEquals("13", Formats.precipitation(12.7, imperial = false))
+        assertEquals("29.92", Formats.pressure(1013.25, imperial = true))
+        assertEquals("1013", Formats.pressure(1013.25, imperial = false))
+        assertEquals("12", Formats.snowDepth(0.30, imperial = true))
+        assertEquals("30", Formats.snowDepth(0.30, imperial = false))
+        assertEquals("2.0", Formats.snowfall(5.08, imperial = true))
+        assertEquals("3.3", Formats.waves(1.0, imperial = true))
+        assertEquals("6.2", Formats.visibility(10_000.0, imperial = true))
+        assertEquals("10", Formats.visibility(10_000.0, imperial = false))
+        assertEquals("35", Formats.flow(1.0, imperial = true))
+    }
 }

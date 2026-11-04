@@ -512,10 +512,7 @@ private fun HourColumn(
         }
         if (showAmount) {
             Text(
-                hour.precipitation
-                    ?.value
-                    ?.takeIf { it >= 0.1 }
-                    ?.let { stringResource(R.string.mm, Formats.millimetres(it)) } ?: "",
+                hour.precipitation?.value?.takeIf { it >= 0.1 }?.let { rainText(it) } ?: "",
                 style = MaterialTheme.typography.labelSmall,
                 color = RainColor,
             )
@@ -689,7 +686,7 @@ private fun Tiles(forecast: Forecast, extras: Extras, onOpenAirQuality: () -> Un
                 add { m ->
                     Tile(
                         stringResource(R.string.visibility),
-                        stringResource(R.string.visibility_km, Formats.km(v.value)),
+                        visibilityText(v.value),
                         stringResource(Formats.visibility(v.value)),
                         m,
                         source =

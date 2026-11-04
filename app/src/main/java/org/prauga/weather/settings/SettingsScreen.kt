@@ -4,9 +4,13 @@
 package org.prauga.weather.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -37,6 +41,14 @@ fun SettingsScreen(preferences: WeatherPreferences, onBack: () -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            Text(
+                stringResource(R.string.units_follow),
+                modifier = Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         item {
             PvotListGroup(title = stringResource(R.string.wind_speed_unit)) {

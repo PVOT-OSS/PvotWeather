@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import org.prauga.weather.R
 import org.prauga.weather.WeatherApplication
 import org.prauga.weather.core.model.Condition
+import org.prauga.weather.core.model.TemperatureUnit
 import org.prauga.weather.forecast.Formats
 import org.prauga.weather.settings.symbol
 
@@ -131,7 +132,11 @@ data class WidgetData(
                         WidgetDetail(
                             R.drawable.ic_w_eye,
                             context.getString(R.string.visibility),
-                            context.getString(R.string.visibility_km, "10"),
+                            context.getString(
+                                R.string.value_unit,
+                                "10",
+                                context.getString(R.string.unit_km),
+                            ),
                         ),
                     ),
                 sunrise = sunrise,
@@ -155,6 +160,7 @@ data class WidgetData(
                     ?: return WidgetData(context.getString(R.string.no_places))
             val unit = container.preferences.temperatureUnit.first()
             val windUnit = container.preferences.windUnit.first()
+            val imperial = unit == TemperatureUnit.FAHRENHEIT
             val forecast = container.forecasts.observe(place).first().forecast
             val zone = place.zone
             val is24 = DateFormat.is24HourFormat(context)
@@ -219,7 +225,13 @@ data class WidgetData(
                         WidgetDetail(
                             R.drawable.ic_w_eye,
                             context.getString(R.string.visibility),
-                            context.getString(R.string.visibility_km, Formats.km(it)),
+                            context.getString(
+                                R.string.value_unit,
+                                Formats.visibility(it, imperial),
+                                context.getString(
+                                    if (imperial) R.string.unit_mi else R.string.unit_km
+                                ),
+                            ),
                         )
                     )
                 }
