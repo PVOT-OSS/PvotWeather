@@ -16,6 +16,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import org.prauga.weather.about.AboutScreen
+import org.prauga.weather.compare.CompareScreen
+import org.prauga.weather.compare.CompareViewModel
 import org.prauga.weather.core.model.TemperatureUnit
 import org.prauga.weather.core.model.WindUnit
 import org.prauga.weather.forecast.ForecastRoute
@@ -34,6 +36,8 @@ import org.prauga.weather.settings.Units
 @Serializable data object SettingsKey : NavKey
 
 @Serializable data object AboutKey : NavKey
+
+@Serializable data object CompareKey : NavKey
 
 @Composable
 fun WeatherNavigation(container: AppContainer) {
@@ -68,6 +72,7 @@ fun WeatherNavigation(container: AppContainer) {
                             onOpenPlaces = { backStack.add(PlacesKey) },
                             menu =
                                 listOf(
+                                    MenuItem(R.string.compare) { backStack.add(CompareKey) },
                                     MenuItem(R.string.settings) { backStack.add(SettingsKey) },
                                     MenuItem(R.string.about) { backStack.add(AboutKey) },
                                 ),
@@ -82,6 +87,19 @@ fun WeatherNavigation(container: AppContainer) {
                                         container.geocoding,
                                         container.preferences,
                                         container.locateCurrentPlace,
+                                    )
+                                },
+                            onBack = { backStack.removeLastOrNull() },
+                        )
+                    }
+                    entry<CompareKey> {
+                        CompareScreen(
+                            viewModel =
+                                viewModel {
+                                    CompareViewModel(
+                                        container.forecasts,
+                                        container.places,
+                                        container.preferences,
                                     )
                                 },
                             onBack = { backStack.removeLastOrNull() },
