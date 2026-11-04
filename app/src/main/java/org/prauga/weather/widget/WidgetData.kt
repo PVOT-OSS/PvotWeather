@@ -7,6 +7,7 @@ import android.content.Context
 import android.text.format.DateFormat
 import androidx.annotation.DrawableRes
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import org.prauga.weather.R
@@ -41,8 +42,109 @@ data class WidgetData(
     val sunriseText: String? = null,
     val sunsetText: String? = null,
     val zone: ZoneId = ZoneId.systemDefault(),
+    val now: Instant = Instant.now(),
 ) {
     companion object {
+        fun sample(context: Context): WidgetData {
+            val zone = ZoneId.of("Asia/Kolkata")
+            val today = LocalDate.now(zone)
+            val now = today.atTime(14, 0).atZone(zone).toInstant()
+            val is24 = DateFormat.is24HourFormat(context)
+            fun degrees(value: Int) = "$value°"
+            val hourTemps = listOf(26, 27, 27, 26, 25, 24)
+            val hourIcons =
+                listOf(
+                    R.drawable.ic_w_partly,
+                    R.drawable.ic_w_partly,
+                    R.drawable.ic_w_cloud,
+                    R.drawable.ic_w_rain,
+                    R.drawable.ic_w_rain,
+                    R.drawable.ic_w_cloud,
+                )
+            val sunrise = today.atTime(6, 13).atZone(zone).toInstant()
+            val sunset = today.atTime(17, 51).atZone(zone).toInstant()
+            return WidgetData(
+                place = SAMPLE_PLACE,
+                temperature = degrees(26),
+                condition = context.getString(R.string.condition_partly_cloudy),
+                icon = R.drawable.ic_w_partly,
+                highLow = context.getString(R.string.widget_high_low, degrees(29), degrees(20)),
+                hours =
+                    hourTemps.indices.map { i ->
+                        WidgetHour(
+                            if (i == 0) context.getString(R.string.now)
+                            else Formats.hour(now.plusSeconds(3600L * i), zone, is24),
+                            hourIcons[i],
+                            degrees(hourTemps[i]),
+                        )
+                    },
+                days =
+                    listOf(
+                            Triple(R.drawable.ic_w_partly, 29 to 20, null),
+                            Triple(R.drawable.ic_w_rain, 28 to 20, 60),
+                            Triple(R.drawable.ic_w_rain, 27 to 19, 80),
+                            Triple(R.drawable.ic_w_cloud, 28 to 19, 30),
+                            Triple(R.drawable.ic_w_partly, 29 to 20, null),
+                            Triple(R.drawable.ic_w_sun, 30 to 20, null),
+                        )
+                        .mapIndexed { i, (icon, temps, rain) ->
+                            WidgetDay(
+                                if (i == 0) context.getString(R.string.today)
+                                else Formats.weekday(today.plusDays(i.toLong())),
+                                icon,
+                                degrees(temps.first),
+                                degrees(temps.second),
+                                rain?.let { context.getString(R.string.percent, it) },
+                            )
+                        },
+                details =
+                    listOf(
+                        WidgetDetail(
+                            R.drawable.ic_w_umbrella,
+                            context.getString(R.string.widget_rain_chance),
+                            context.getString(R.string.percent, 20),
+                        ),
+                        WidgetDetail(
+                            R.drawable.ic_w_uv,
+                            context.getString(R.string.uv_index),
+                            "6 " + context.getString(R.string.uv_high),
+                        ),
+                        WidgetDetail(
+                            R.drawable.ic_w_wind,
+                            context.getString(R.string.wind),
+                            context.getString(
+                                R.string.wind_speed,
+                                12,
+                                context.getString(R.string.unit_kmh),
+                            ),
+                        ),
+                        WidgetDetail(
+                            R.drawable.ic_w_droplet,
+                            context.getString(R.string.humidity),
+                            context.getString(R.string.percent, 58),
+                        ),
+                        WidgetDetail(
+                            R.drawable.ic_w_temperature,
+                            context.getString(R.string.feels_like),
+                            degrees(27),
+                        ),
+                        WidgetDetail(
+                            R.drawable.ic_w_eye,
+                            context.getString(R.string.visibility),
+                            context.getString(R.string.visibility_km, "10"),
+                        ),
+                    ),
+                sunrise = sunrise,
+                sunset = sunset,
+                sunriseText = Formats.time(sunrise, zone, is24),
+                sunsetText = Formats.time(sunset, zone, is24),
+                zone = zone,
+                now = now,
+            )
+        }
+
+        private const val SAMPLE_PLACE = "Bengaluru"
+
         suspend fun load(context: Context): WidgetData {
             val container = (context.applicationContext as WeatherApplication).container
             val places = container.places.observeAll().first()

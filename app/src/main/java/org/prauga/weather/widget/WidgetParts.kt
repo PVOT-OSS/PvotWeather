@@ -140,7 +140,7 @@ fun HourRow(hours: List<WidgetHour>) {
 fun DayRows(days: List<WidgetDay>) {
     days.forEach { day ->
         Row(
-            GlanceModifier.fillMaxWidth().padding(vertical = 4.dp),
+            GlanceModifier.fillMaxWidth().padding(vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(GlanceModifier.defaultWeight()) { Label(day.label, size = 14.sp) }
