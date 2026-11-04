@@ -37,9 +37,9 @@ private val LOCATION_PERMISSIONS =
     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
 @Composable
-fun PlacesScreen(viewModel: PlacesViewModel, onBack: () -> Unit) {
+fun PlacesScreen(viewModel: PlacesViewModel, onBack: (() -> Unit)?) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(viewModel) { viewModel.closes.collect { onBack() } }
+    LaunchedEffect(viewModel) { viewModel.closes.collect { onBack?.invoke() } }
     val permission =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             granted ->

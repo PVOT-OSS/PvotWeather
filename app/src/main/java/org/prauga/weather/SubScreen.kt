@@ -26,7 +26,7 @@ import com.prauga.pvot.designsystem.theme.PvotSpacing
 @Composable
 fun SubScreen(
     title: String,
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(PvotSpacing.M),
     content: LazyListScope.() -> Unit,
 ) {
