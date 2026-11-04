@@ -106,10 +106,11 @@ import org.prauga.weather.core.model.Sourced
 import org.prauga.weather.placeTitle
 import org.prauga.weather.settings.LocalUnits
 import org.prauga.weather.settings.symbol
+import org.prauga.weather.theme.WeatherColorsDefaults
 
-private val HighColor = Color(0xFFFF8A3D)
-private val LowColor = Color(0xFF4FA3E0)
-private val RainColor = Color(0xFF4FA3E0)
+private val HighColor = WeatherColorsDefaults.Colors.high
+private val LowColor = WeatherColorsDefaults.Colors.low
+private val RainColor = WeatherColorsDefaults.Colors.rain
 
 private const val TEMPERATURE_SPREAD = 3.0
 
@@ -777,16 +778,7 @@ private fun AqiBar(aqi: Int, modifier: Modifier) {
     Canvas(modifier) {
         val h = size.height
         drawLine(
-            Brush.horizontalGradient(
-                listOf(
-                    Color(0xFF3DBE5C),
-                    Color(0xFFF2D43D),
-                    Color(0xFFF28A2E),
-                    Color(0xFFE5483B),
-                    Color(0xFF9B4FD1),
-                    Color(0xFF7E2340),
-                )
-            ),
+            Brush.horizontalGradient(WeatherColorsDefaults.Colors.aqiScale),
             Offset(h / 2, h / 2),
             Offset(size.width - h / 2, h / 2),
             strokeWidth = h,
@@ -850,9 +842,9 @@ private fun AlertsCard(alerts: List<Alert>, zone: ZoneId) {
 
 private fun alertColor(level: AlertLevel) =
     when (level) {
-        AlertLevel.YELLOW -> Color(0xFFF2C94C)
-        AlertLevel.ORANGE -> Color(0xFFF2994A)
-        AlertLevel.RED -> Color(0xFFEB5757)
+        AlertLevel.YELLOW -> WeatherColorsDefaults.Colors.alertYellow
+        AlertLevel.ORANGE -> WeatherColorsDefaults.Colors.alertOrange
+        AlertLevel.RED -> WeatherColorsDefaults.Colors.alertRed
     }
 
 private fun alertLevelLabel(level: AlertLevel) =
@@ -902,15 +894,7 @@ private fun UvBar(index: Double, modifier: Modifier) {
     Canvas(modifier) {
         val h = size.height
         drawLine(
-            Brush.horizontalGradient(
-                listOf(
-                    Color(0xFF3DBE5C),
-                    Color(0xFFF2D43D),
-                    Color(0xFFF28A2E),
-                    Color(0xFFE5483B),
-                    Color(0xFF9B4FD1),
-                )
-            ),
+            Brush.horizontalGradient(WeatherColorsDefaults.Colors.uvScale),
             Offset(h / 2, h / 2),
             Offset(size.width - h / 2, h / 2),
             strokeWidth = h,

@@ -39,9 +39,10 @@ import org.prauga.weather.forecast.Formats
 import org.prauga.weather.placeTitle
 import org.prauga.weather.settings.LocalUnits
 import org.prauga.weather.settings.symbol
+import org.prauga.weather.theme.WeatherColorsDefaults
 
-private val OpenMeteoColor = Color(0xFF26C6DA)
-private val MetColor = Color(0xFFB388FF)
+private val OpenMeteoColor = WeatherColorsDefaults.Colors.openMeteo
+private val MetColor = WeatherColorsDefaults.Colors.metNorway
 
 private const val HOURS = 48
 
