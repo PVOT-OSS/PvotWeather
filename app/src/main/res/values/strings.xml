@@ -163,6 +163,9 @@
     <string name="about_licence_summary">Apache License 2.0</string>
     <string name="temperature">Temperature</string>
     <string name="wind_speed_unit">Wind speed</string>
+    <string name="sources">Sources</string>
+    <string name="independent_sources">Independent sources in the Nordics</string>
+    <string name="independent_sources_summary">Open-Meteo normally blends in MET Norway\'s own model there. With this on it uses ECMWF instead, so the two forecasts are independent.</string>
     <string name="unit_celsius">°C</string>
     <string name="unit_fahrenheit">°F</string>
     <string name="unit_celsius_name">Celsius (°C)</string>

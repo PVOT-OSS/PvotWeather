@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotListRow
+import com.prauga.pvot.designsystem.components.list.PvotSwitchRow
 import org.prauga.weather.R
 import org.prauga.weather.SubScreen
 import org.prauga.weather.core.data.WeatherPreferences
@@ -24,6 +25,7 @@ fun SettingsScreen(preferences: WeatherPreferences, onBack: () -> Unit) {
     val temperature by
         preferences.temperatureUnit.collectAsStateWithLifecycle(TemperatureUnit.CELSIUS)
     val wind by preferences.windUnit.collectAsStateWithLifecycle(WindUnit.KILOMETRES_PER_HOUR)
+    val independent by preferences.independentSources.collectAsStateWithLifecycle(false)
     SubScreen(stringResource(R.string.settings), onBack, Arrangement.spacedBy(20.dp)) {
         item {
             PvotListGroup(title = stringResource(R.string.temperature)) {
@@ -44,6 +46,18 @@ fun SettingsScreen(preferences: WeatherPreferences, onBack: () -> Unit) {
                             preferences.setWindUnit(unit)
                         }
                     }
+                }
+            }
+        }
+        item {
+            PvotListGroup(title = stringResource(R.string.sources)) {
+                item {
+                    PvotSwitchRow(
+                        title = stringResource(R.string.independent_sources),
+                        summary = stringResource(R.string.independent_sources_summary),
+                        checked = independent,
+                        onCheckedChange = preferences::setIndependentSources,
+                    )
                 }
             }
         }

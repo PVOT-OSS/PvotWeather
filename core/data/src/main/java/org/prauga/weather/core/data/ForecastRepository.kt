@@ -15,7 +15,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import org.prauga.weather.core.data.cache.CachedForecast
 import org.prauga.weather.core.data.cache.ForecastCacheDao
@@ -47,13 +49,15 @@ class ForecastRepository(
     private val merger: ForecastMerger = ForecastMerger(),
     private val clock: Clock = Clock.systemUTC(),
     private val tick: Duration = Duration.ofMinutes(5),
+    private val independentSources: Flow<Boolean> = flowOf(false),
 ) {
     private val retryAt = ConcurrentHashMap<Pair<String, Provider>, Instant>()
     private val failures = ConcurrentHashMap<Pair<String, Provider>, Int>()
 
     fun observe(place: Place): Flow<ForecastSnapshot> =
-        combine(cache.observe(place.key), ticker()) { rows, _ ->
-                val om = rows.find(Provider.OPEN_METEO)
+        combine(cache.observe(place.key), ticker(), independentSources) { rows, _, independent ->
+                val model = openMeteoModel(place, independent)
+                val om = rows.firstOrNull { it.provider == openMeteoKey(model) }
                 val met = rows.find(Provider.MET_NORWAY)
                 ForecastSnapshot(
                     forecast =
@@ -62,14 +66,17 @@ class ForecastRepository(
                             om?.let { parseOrNull(Provider.OPEN_METEO, it.body, place) },
                             met?.let { parseOrNull(Provider.MET_NORWAY, it.body, place) },
                             clock.instant(),
+                            model,
                         ),
                     fetchedAt =
-                        rows
-                            .mapNotNull { row ->
-                                Provider.entries
-                                    .find { it.name == row.provider }
-                                    ?.let { it to Instant.ofEpochMilli(row.fetchedAt) }
-                            }
+                        listOfNotNull(
+                                om?.let {
+                                    Provider.OPEN_METEO to Instant.ofEpochMilli(it.fetchedAt)
+                                },
+                                met?.let {
+                                    Provider.MET_NORWAY to Instant.ofEpochMilli(it.fetchedAt)
+                                },
+                            )
                             .toMap(),
                 )
             }
@@ -93,19 +100,20 @@ class ForecastRepository(
 
     private suspend fun refreshOpenMeteo(place: Place, force: Boolean): RefreshResult {
         val now = clock.instant()
-        val row = cache.get(place.key, Provider.OPEN_METEO.name)
+        val model = openMeteoModel(place, independentSources.first())
+        val row = cache.get(place.key, openMeteoKey(model))
         if (row != null) {
             val age = Duration.between(Instant.ofEpochMilli(row.fetchedAt), now)
             val interval = if (force) OPEN_METEO_FORCED_INTERVAL else OPEN_METEO_INTERVAL
             if (age < interval) return RefreshResult.NotDue
         }
-        val body = openMeteo.forecast(place)
+        val body = openMeteo.forecast(place, model)
         // Never replace a good cache with a body we can't read.
         OpenMeteoParser.parse(body.text)
         cache.upsert(
             CachedForecast(
                 place.key,
-                Provider.OPEN_METEO.name,
+                openMeteoKey(model),
                 body.text,
                 now.toEpochMilli(),
                 null,
@@ -192,6 +200,14 @@ class ForecastRepository(
     private fun Instant?.or(now: Instant): Long = (this ?: now + MET_DEFAULT_EXPIRY).toEpochMilli()
 
     companion object {
+        const val INDEPENDENT_MODEL = "ecmwf_ifs025"
+
+        fun openMeteoModel(place: Place, independent: Boolean): String? =
+            if (independent && Coverage.hasNowcast(place)) INDEPENDENT_MODEL else null
+
+        internal fun openMeteoKey(model: String?) =
+            model?.let { "${Provider.OPEN_METEO.name}@$it" } ?: Provider.OPEN_METEO.name
+
         val OPEN_METEO_INTERVAL: Duration = Duration.ofMinutes(30)
         val OPEN_METEO_FORCED_INTERVAL: Duration = Duration.ofMinutes(1)
 

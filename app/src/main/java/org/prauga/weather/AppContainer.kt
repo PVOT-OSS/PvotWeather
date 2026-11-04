@@ -27,7 +27,14 @@ class AppContainer(private val context: Context) {
 
     private val metNorway = MetNorwayApi(http)
 
-    val forecasts = ForecastRepository(database.forecastCache(), OpenMeteoApi(http), metNorway)
+    val preferences = WeatherPreferences(context)
+    val forecasts =
+        ForecastRepository(
+            database.forecastCache(),
+            OpenMeteoApi(http),
+            metNorway,
+            independentSources = preferences.independentSources,
+        )
     val extras =
         ExtrasRepository(
             database.forecastCache(),
@@ -38,7 +45,6 @@ class AppContainer(private val context: Context) {
             { Locale.getDefault().language },
         )
     val places = PlaceRepository(database.places(), database.forecastCache())
-    val preferences = WeatherPreferences(context)
     val geocoding = GeocodingApi(http)
     val locateCurrentPlace = LocateCurrentPlace(LocationFinder(context), places)
 
