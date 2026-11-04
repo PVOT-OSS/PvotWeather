@@ -14,6 +14,9 @@ data class Place(
     val longitude: Double,
     val elevation: Int?,
     val zone: ZoneId,
+    val country: String? = null,
+    val id: Long = 0,
+    val isCurrentLocation: Boolean = false,
 ) {
     val key: String
         get() = "${format(latitude)},${format(longitude)}"
@@ -26,7 +29,21 @@ data class Place(
             longitude: Double,
             elevation: Int?,
             zone: ZoneId,
-        ) = Place(name, area, truncate(latitude), truncate(longitude), elevation, zone)
+            country: String? = null,
+            id: Long = 0,
+            isCurrentLocation: Boolean = false,
+        ) =
+            Place(
+                name,
+                area,
+                truncate(latitude),
+                truncate(longitude),
+                elevation,
+                zone,
+                country,
+                id,
+                isCurrentLocation,
+            )
 
         fun truncate(value: Double): Double =
             BigDecimal(value.toString()).setScale(4, RoundingMode.DOWN).toDouble()
