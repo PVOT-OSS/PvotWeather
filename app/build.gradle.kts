@@ -4,6 +4,7 @@
 plugins {
     alias(libs.plugins.pvot.android.application)
     alias(libs.plugins.pvot.android.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -41,6 +42,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
