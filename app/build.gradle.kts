@@ -15,6 +15,8 @@ android {
         versionName = "1.0"
     }
 
+    buildFeatures { buildConfig = true }
+
     buildTypes {
         debug { applicationIdSuffix = ".dev" }
         release {
@@ -27,6 +29,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:data"))
     implementation(libs.pvot.design.system)
     implementation(libs.pvot.core.ui)
     implementation(libs.androidx.activity.compose)
@@ -35,6 +38,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.compose.foundation)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

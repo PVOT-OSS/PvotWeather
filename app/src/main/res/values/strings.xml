@@ -5,4 +5,91 @@
 -->
 <resources>
     <string name="app_name">Weather</string>
+
+    <string name="now">Now</string>
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+    <string name="degrees">%1$d°</string>
+    <string name="degrees_celsius">%1$d°C</string>
+    <string name="celsius_unit">°C</string>
+    <string name="high">High %1$s</string>
+    <string name="low">Low %1$s</string>
+    <string name="percent">%1$d%%</string>
+
+    <string name="condition_clear">Clear</string>
+    <string name="condition_clear_day">Clear and sunny</string>
+    <string name="condition_partly_cloudy">Partly cloudy</string>
+    <string name="condition_cloudy">Cloudy</string>
+    <string name="condition_fog">Fog</string>
+    <string name="condition_drizzle">Drizzle</string>
+    <string name="condition_rain_showers">Rain showers</string>
+    <string name="condition_rain">Rain</string>
+    <string name="condition_sleet">Sleet</string>
+    <string name="condition_snow_showers">Snow showers</string>
+    <string name="condition_snow">Snow</string>
+    <string name="condition_heavy_rain">Heavy rain</string>
+    <string name="condition_heavy_snow">Heavy snow</string>
+    <string name="condition_thunderstorm">Thunderstorms</string>
+    <string name="rain_likely_next_hour">Rain likely in the next hour</string>
+    <string name="rain_possible_next_hour">Might rain in the next hour</string>
+
+    <string name="sources_values">Open-Meteo %1$s · MET Norway %2$s</string>
+    <string name="sources_differ">The two forecasts differ</string>
+    <string name="sources_show">Show what each source says</string>
+
+    <string name="days_title">%1$d-day forecast</string>
+    <string name="days_single_source">From %1$s on, only Open-Meteo forecasts this far ahead.</string>
+    <plurals name="days_show_all">
+        <item quantity="one">Show %1$d day</item>
+        <item quantity="other">Show all %1$d days</item>
+    </plurals>
+    <string name="days_show_fewer">Show fewer days</string>
+
+    <string name="feels_like">Feels like</string>
+    <string name="feels_warmer">Feels warmer than the actual temperature</string>
+    <string name="feels_colder">Feels colder than the actual temperature</string>
+    <string name="feels_same">Close to the actual temperature</string>
+    <string name="uv_index">UV index</string>
+    <string name="uv_low">Low</string>
+    <string name="uv_moderate">Moderate</string>
+    <string name="uv_high">High</string>
+    <string name="uv_very_high">Very high</string>
+    <string name="uv_extreme">Extreme</string>
+    <string name="uv_low_all_day">Low throughout the day</string>
+    <string name="uv_peak">Peaks at %1$s today</string>
+    <string name="visibility">Visibility</string>
+    <string name="visibility_km">%1$s km</string>
+    <string name="visibility_clear">The view is clear</string>
+    <string name="visibility_haze">Slightly hazy</string>
+    <string name="visibility_hazy">Hazy</string>
+    <string name="visibility_fog">Foggy</string>
+    <string name="humidity">Humidity</string>
+    <string name="dew_point">Dew point %1$s</string>
+    <string name="wind">Wind</string>
+    <string name="wind_speed">%1$d km/h</string>
+    <string name="wind_from">From the %1$s</string>
+    <string name="wind_from_gusts">From the %1$s, gusts up to %2$d km/h</string>
+    <string name="sunrise">Sunrise</string>
+    <string name="sunset">Sunset %1$s</string>
+    <string name="open_meteo_only">Open-Meteo only</string>
+
+    <string name="compass_n">north</string>
+    <string name="compass_ne">northeast</string>
+    <string name="compass_e">east</string>
+    <string name="compass_se">southeast</string>
+    <string name="compass_s">south</string>
+    <string name="compass_sw">southwest</string>
+    <string name="compass_w">west</string>
+    <string name="compass_nw">northwest</string>
+
+    <string name="updated_at">Updated %1$s</string>
+    <string name="met_failed">MET Norway can\'t be reached right now, so this is Open-Meteo alone.</string>
+    <string name="open_meteo_failed">Open-Meteo can\'t be reached right now, so this is MET Norway alone.</string>
+    <string name="attribution">Weather data by %1$s and %2$s, licensed %3$s. Combined by PvotWeather; neither source endorses this app.</string>
+    <string name="attribution_open_meteo">Open-Meteo.com</string>
+    <string name="attribution_met">MET Norway</string>
+    <string name="attribution_licence">CC BY 4.0</string>
+
+    <string name="no_forecast_title">No forecast yet</string>
+    <string name="no_forecast_message">Open-Meteo and MET Norway can\'t be reached. Check the connection and try again.</string>
 </resources>
