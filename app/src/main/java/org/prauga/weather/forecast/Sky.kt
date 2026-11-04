@@ -30,6 +30,8 @@ enum class Sky {
     STARS,
 }
 
+class SkyColors(val light: Color, val sun: Color, val shade: Color, val ink: Color)
+
 /**
  * Every sky is a pure function of elapsed seconds, so frames read no state and allocate nothing.
  */
@@ -70,22 +72,33 @@ object SkyMath {
 
 private const val TAU = (2 * PI).toFloat()
 
-fun DrawScope.drawSky(sky: Sky, t: Float, alpha: Float, light: Color, ink: Color, path: Path) {
+fun DrawScope.drawSky(sky: Sky, t: Float, alpha: Float, colors: SkyColors, path: Path) {
     if (alpha <= 0.001f) return
     when (sky) {
-        Sky.SUN -> sun(t, alpha, light, path)
-        Sky.GLOW -> glow(t, alpha, light)
-        Sky.CLOUDS -> clouds(t, alpha, light, count = 4, scale = 0.16f, strength = 0.55f)
-        Sky.OVERCAST -> clouds(t, alpha, light, count = 6, scale = 0.22f, strength = 0.4f)
-        Sky.RAIN -> rain(t, alpha, ink, count = 70, speed = 1.1f, length = 0.03f, lean = 8f)
-        Sky.DOWNPOUR -> downpour(t, alpha, ink)
-        Sky.STORM -> {
-            downpour(t, alpha, ink)
-            lightning(t, alpha, light, path)
+        Sky.SUN -> sun(t, alpha, colors.sun, path)
+        Sky.GLOW -> glow(t, alpha, colors.sun)
+        Sky.CLOUDS ->
+            clouds(t, alpha, colors.light, count = 4, scale = 0.16f, strength = 0.6f, band = 0.5f)
+        Sky.OVERCAST ->
+            clouds(t, alpha, colors.light, count = 6, scale = 0.22f, strength = 0.4f, band = 0.5f)
+        Sky.RAIN -> {
+            rainClouds(t, alpha, colors.shade, strength = 0.28f)
+            rainLayers(t, alpha, colors.light, intensity = 1f, lean = 7f)
         }
-        Sky.SNOW -> snow(t, alpha, ink)
-        Sky.FOG -> fog(t, alpha, ink)
-        Sky.STARS -> stars(t, alpha, light)
+        Sky.DOWNPOUR -> {
+            drawRect(colors.shade.copy(alpha = alpha * 0.15f))
+            rainClouds(t, alpha, colors.shade, strength = 0.4f)
+            rainLayers(t, alpha, colors.light, intensity = 2.2f, lean = 12f + 4f * sin(t * 0.4f))
+        }
+        Sky.STORM -> {
+            drawRect(colors.shade.copy(alpha = alpha * 0.4f))
+            rainClouds(t, alpha, colors.shade, strength = 0.55f)
+            rainLayers(t, alpha, colors.light, intensity = 2.4f, lean = 14f + 6f * sin(t * 0.5f))
+            lightning(t, alpha, colors.light, path)
+        }
+        Sky.SNOW -> snow(t, alpha, colors.ink)
+        Sky.FOG -> fog(t, alpha, colors.ink)
+        Sky.STARS -> stars(t, alpha, colors.light)
     }
 }
 
@@ -107,7 +120,7 @@ private fun DrawScope.sun(t: Float, alpha: Float, light: Color, path: Path) {
     val cx = w * 0.3f
     val cy = size.height * 0.2f
     val pulse = 0.5f + 0.5f * sin(t * 0.6f)
-    puff(light, cx, cy, w * (0.26f + 0.03f * pulse), alpha * (0.32f + 0.12f * pulse))
+    puff(light, cx, cy, w * (0.26f + 0.03f * pulse), alpha * (0.5f + 0.15f * pulse))
     val rays = 7
     val length = w * 1.3f
     for (i in 0 until rays) {
@@ -122,7 +135,7 @@ private fun DrawScope.sun(t: Float, alpha: Float, light: Color, path: Path) {
         drawPath(
             path,
             Brush.radialGradient(
-                listOf(light.copy(alpha = alpha * 0.11f * shimmer), light.copy(alpha = 0f)),
+                listOf(light.copy(alpha = alpha * 0.16f * shimmer), light.copy(alpha = 0f)),
                 center = Offset(cx, cy),
                 radius = length * 0.75f,
             ),
@@ -134,22 +147,23 @@ private fun DrawScope.glow(t: Float, alpha: Float, light: Color) {
     val w = size.width
     val h = size.height
     val pulse = 0.5f + 0.5f * sin(t * 0.5f)
-    puff(light, w * 0.5f, h * 0.6f, w * (0.3f + 0.03f * pulse), alpha * (0.4f + 0.1f * pulse))
+    puff(light, w * 0.5f, h * 0.6f, w * (0.3f + 0.03f * pulse), alpha * (0.5f + 0.1f * pulse))
     for (i in 0 until 3) {
         val speed = h * (0.02f + 0.015f * SkyMath.noise(i, 5))
         val y = h - ((SkyMath.noise(i, 6) * h + t * speed) % h)
         val x = w * (0.2f + 0.6f * SkyMath.noise(i, 7)) + sin(t * 0.2f + i) * w * 0.08f
-        puff(light, x, y, w * 0.35f, alpha * 0.14f)
+        puff(light, x, y, w * 0.35f, alpha * 0.16f)
     }
 }
 
 private fun DrawScope.clouds(
     t: Float,
     alpha: Float,
-    light: Color,
+    color: Color,
     count: Int,
     scale: Float,
     strength: Float,
+    band: Float,
 ) {
     val w = size.width
     val h = size.height
@@ -157,12 +171,47 @@ private fun DrawScope.clouds(
         val r = w * scale * (0.8f + 0.5f * SkyMath.noise(i, 10))
         val speed = w * (0.012f + 0.014f * SkyMath.noise(i, 11))
         val x = ((SkyMath.noise(i, 12) * w + t * speed) % (w + 3 * r)) - 1.5f * r
-        val y = h * (0.08f + 0.5f * SkyMath.noise(i, 13)) + sin(t * 0.3f + i * 2.1f) * r * 0.06f
+        val y = h * (0.06f + band * SkyMath.noise(i, 13)) + sin(t * 0.3f + i * 2.1f) * r * 0.06f
         val a = alpha * strength * (0.7f + 0.3f * SkyMath.noise(i, 14))
-        puff(light, x, y, r, a)
-        puff(light, x + r * 0.75f, y - r * 0.25f, r * 0.8f, a)
-        puff(light, x - r * 0.7f, y - r * 0.1f, r * 0.7f, a * 0.9f)
+        puff(color, x, y, r, a)
+        puff(color, x + r * 0.75f, y - r * 0.25f, r * 0.8f, a)
+        puff(color, x - r * 0.7f, y - r * 0.1f, r * 0.7f, a * 0.9f)
     }
+}
+
+private fun DrawScope.rainClouds(t: Float, alpha: Float, shade: Color, strength: Float) {
+    clouds(t, alpha, shade, count = 7, scale = 0.24f, strength = strength, band = 0.22f)
+}
+
+private fun DrawScope.rainLayers(
+    t: Float,
+    alpha: Float,
+    light: Color,
+    intensity: Float,
+    lean: Float,
+) {
+    rain(
+        t,
+        alpha * 0.55f,
+        light,
+        count = (70 * intensity).toInt(),
+        speed = 1.4f,
+        length = 0.028f,
+        lean = lean,
+        width = 0.9f,
+        salt = 0,
+    )
+    rain(
+        t,
+        alpha,
+        light,
+        count = (45 * intensity).toInt(),
+        speed = 2.4f,
+        length = 0.07f,
+        lean = lean * 1.25f,
+        width = 1.7f,
+        salt = 500,
+    )
 }
 
 private fun DrawScope.rain(
@@ -173,19 +222,22 @@ private fun DrawScope.rain(
     speed: Float,
     length: Float,
     lean: Float,
+    width: Float,
+    salt: Int,
 ) {
     val w = size.width
     val h = size.height
     val angle = lean * TAU / 360f
     val tilt = tan(angle)
-    val stroke = 1.2f * density
-    for (i in 0 until count) {
+    val stroke = width * density
+    for (k in 0 until count) {
+        val i = k + salt
         val x0 = SkyMath.noise(i, 1) * w
         val y0 = SkyMath.noise(i, 2) * h
         val l = h * length * (0.7f + 0.6f * SkyMath.noise(i, 4))
-        val y = ((y0 + t * h * speed * (0.8f + 0.5f * SkyMath.noise(i, 3))) % (h + l)) - l
+        val y = ((y0 + t * h * speed * (0.85f + 0.4f * SkyMath.noise(i, 3))) % (h + l)) - l
         val x = ((x0 - (y - y0) * tilt) % w + w) % w
-        val a = alpha * (0.22f + 0.3f * SkyMath.noise(i, 5))
+        val a = alpha * (0.3f + 0.35f * SkyMath.noise(i, 5))
         drawLine(
             ink.copy(alpha = a),
             Offset(x, y),
@@ -194,11 +246,6 @@ private fun DrawScope.rain(
             cap = StrokeCap.Round,
         )
     }
-}
-
-private fun DrawScope.downpour(t: Float, alpha: Float, ink: Color) {
-    val gust = 13f + 4f * sin(t * 0.4f)
-    rain(t, alpha, ink, count = 150, speed = 1.9f, length = 0.05f, lean = gust)
 }
 
 private fun DrawScope.lightning(t: Float, alpha: Float, light: Color, path: Path) {
