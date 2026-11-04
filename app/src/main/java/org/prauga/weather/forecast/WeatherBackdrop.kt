@@ -29,12 +29,12 @@ import kotlin.math.sin
 import org.prauga.weather.core.model.Condition
 
 enum class Backdrop(val colors: List<Color>, val sky: Sky) {
-    CLEAR(listOf(Color(0xFFFF7300), Color(0xFFFFD580)), Sky.SUN),
-    PARTLY_CLOUDY(listOf(Color(0xFFFEEAA1), Color(0xFFCFCFCF)), Sky.CLOUDS),
+    CLEAR(listOf(Color(0xFF3A8DDE), Color(0xFFC6E6FF)), Sky.SUN),
+    PARTLY_CLOUDY(listOf(Color(0xFF7FB8EA), Color(0xFFC9CFD6)), Sky.CLOUDS),
     CLOUDY(listOf(Color(0xFFD7D7D7), Color(0xFF808080)), Sky.OVERCAST),
-    LIGHT_RAIN(listOf(Color(0xFFA0C9FF), Color(0xFF6F8FAF)), Sky.RAIN),
-    HEAVY_RAIN(listOf(Color(0xFF4A6FA5), Color(0xFF1C2B45)), Sky.DOWNPOUR),
-    THUNDERSTORM(listOf(Color(0xFF3A4C6B), Color(0xFF101820)), Sky.STORM),
+    LIGHT_RAIN(listOf(Color(0xFF8E9DAC), Color(0xFF5B6A7A)), Sky.RAIN),
+    HEAVY_RAIN(listOf(Color(0xFF4A5868), Color(0xFF222B36)), Sky.DOWNPOUR),
+    THUNDERSTORM(listOf(Color(0xFF2A3240), Color(0xFF07090E)), Sky.STORM),
     SNOW(listOf(Color(0xFFFFFFFF), Color(0xFFD8EFFF)), Sky.SNOW),
     FOG(listOf(Color(0xFFE0E0E0), Color(0xFFB0B0B0)), Sky.FOG),
     SUNRISE_SUNSET(listOf(Color(0xFFFF9A8B), Color(0xFFFF6A88), Color(0xFFC64DFF)), Sky.GLOW),
