@@ -59,6 +59,7 @@ fun WeatherNavigation(container: AppContainer) {
                                 viewModel {
                                     ForecastViewModel(
                                         container.forecasts,
+                                        container.extras,
                                         container.places,
                                         container.preferences,
                                         container.locateCurrentPlace,

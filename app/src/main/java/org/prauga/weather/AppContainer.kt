@@ -4,10 +4,13 @@
 package org.prauga.weather
 
 import android.content.Context
+import java.util.Locale
+import org.prauga.weather.core.data.ExtrasRepository
 import org.prauga.weather.core.data.ForecastRepository
 import org.prauga.weather.core.data.PlaceRepository
 import org.prauga.weather.core.data.WeatherPreferences
 import org.prauga.weather.core.data.cache.WeatherDatabase
+import org.prauga.weather.core.network.ArchiveApi
 import org.prauga.weather.core.network.GeocodingApi
 import org.prauga.weather.core.network.MetNorwayApi
 import org.prauga.weather.core.network.OpenMeteoApi
@@ -19,8 +22,16 @@ class AppContainer(context: Context) {
     private val http = WeatherHttp.client(WeatherHttp.userAgent(BuildConfig.VERSION_NAME))
     private val database = WeatherDatabase.create(context)
 
-    val forecasts =
-        ForecastRepository(database.forecastCache(), OpenMeteoApi(http), MetNorwayApi(http))
+    private val metNorway = MetNorwayApi(http)
+
+    val forecasts = ForecastRepository(database.forecastCache(), OpenMeteoApi(http), metNorway)
+    val extras =
+        ExtrasRepository(
+            database.forecastCache(),
+            metNorway,
+            ArchiveApi(http),
+            { Locale.getDefault().language },
+        )
     val places = PlaceRepository(database.places(), database.forecastCache())
     val preferences = WeatherPreferences(context)
     val geocoding = GeocodingApi(http)

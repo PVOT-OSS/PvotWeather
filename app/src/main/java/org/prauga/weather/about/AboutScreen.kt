@@ -36,6 +36,11 @@ private val sources =
         Link(R.string.about_met, R.string.about_met_summary, "https://api.met.no/"),
         Link(R.string.about_geonames, R.string.about_geonames_summary, "https://www.geonames.org/"),
         Link(
+            R.string.about_era5,
+            R.string.about_era5_summary,
+            "https://cds.climate.copernicus.eu/",
+        ),
+        Link(
             R.string.about_cc_by,
             R.string.about_cc_by_summary,
             "https://creativecommons.org/licenses/by/4.0/",
