@@ -32,4 +32,6 @@ include(":app")
 
 include(":core:model")
 
+include(":core:network")
+
 includeBuild("PvotLib")
