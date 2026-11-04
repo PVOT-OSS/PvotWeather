@@ -22,7 +22,8 @@ class MainActivity : PvotBaseActivity() {
             PvotAppTheme {
                 Box(
                     Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                    contentAlignment = Alignment.Center) {
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
                         stringResource(R.string.app_name),
                         style = MaterialTheme.typography.headlineMedium,
