@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pluginManagement {
+    includeBuild("PvotLib/build-logic")
     repositories {
         google {
             content {
@@ -27,4 +28,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Weather"
 include(":app")
- 
+
+includeBuild("PvotLib")
