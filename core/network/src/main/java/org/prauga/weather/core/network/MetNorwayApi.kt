@@ -12,6 +12,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
+import java.time.LocalDate
 import org.prauga.weather.core.model.Place
 
 class MetNorwayApi(private val client: HttpClient, private val baseUrl: String = BASE_URL) {
@@ -31,6 +32,23 @@ class MetNorwayApi(private val client: HttpClient, private val baseUrl: String =
                 if (language == "nb" || language == "nn" || language == "no") "no" else "en",
             )
         }
+
+    suspend fun moon(
+        place: Place,
+        date: LocalDate,
+        offset: String,
+        ifModifiedSince: String?,
+    ): Fetch =
+        fetch("sunrise/3.0/moon", place, ifModifiedSince) {
+            parameter("date", date.toString())
+            parameter("offset", offset)
+        }
+
+    suspend fun airQuality(place: Place, ifModifiedSince: String?): Fetch =
+        fetch("airqualityforecast/0.1/", place, ifModifiedSince)
+
+    suspend fun ocean(place: Place, ifModifiedSince: String?): Fetch =
+        fetch("oceanforecast/2.0/complete", place, ifModifiedSince)
 
     private suspend fun fetch(
         path: String,
