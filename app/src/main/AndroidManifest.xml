@@ -32,15 +32,59 @@
             </intent-filter>
         </activity>
         <receiver
-            android:name=".widget.WeatherWidgetReceiver"
+            android:name=".widget.ForecastWidgetReceiver"
             android:exported="true"
-            android:label="@string/app_name">
+            android:label="@string/widget_forecast">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/weather_widget_info" />
+                android:resource="@xml/widget_forecast_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.HourlyWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_hourly">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_hourly_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.DailyWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_daily">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_daily_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.DetailsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_details">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_details_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.SunWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_sun">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_sun_info" />
         </receiver>
     </application>
 

@@ -4,7 +4,6 @@
 package org.prauga.weather.widget
 
 import android.content.Context
-import androidx.glance.appwidget.updateAll
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.NetworkType
@@ -27,7 +26,7 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
         // only.
         if (place != null)
             container.forecasts.refresh(place, providers = setOf(Provider.OPEN_METEO))
-        WeatherWidget().updateAll(applicationContext)
+        WeatherGlanceWidget.updateAll(applicationContext)
         return Result.success()
     }
 
