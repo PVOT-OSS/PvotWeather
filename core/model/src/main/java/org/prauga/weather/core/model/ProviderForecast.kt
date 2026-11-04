@@ -42,4 +42,5 @@ data class ProviderForecast(
     val current: ProviderHour?,
     val hours: List<ProviderHour>,
     val days: List<ProviderDay>,
+    val minutely: List<PrecipitationStep> = emptyList(),
 )

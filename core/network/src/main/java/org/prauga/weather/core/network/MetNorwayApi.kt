@@ -4,6 +4,7 @@
 package org.prauga.weather.core.network
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -15,12 +16,33 @@ import org.prauga.weather.core.model.Place
 
 class MetNorwayApi(private val client: HttpClient, private val baseUrl: String = BASE_URL) {
 
-    suspend fun locationforecast(place: Place, ifModifiedSince: String?): Fetch {
+    suspend fun locationforecast(place: Place, ifModifiedSince: String?): Fetch =
+        fetch("locationforecast/2.0/complete", place, ifModifiedSince) {
+            place.elevation?.let { parameter("altitude", it) }
+        }
+
+    suspend fun nowcast(place: Place, ifModifiedSince: String?): Fetch =
+        fetch("nowcast/2.0/complete", place, ifModifiedSince)
+
+    suspend fun alerts(place: Place, language: String, ifModifiedSince: String?): Fetch =
+        fetch("metalerts/2.0/current.json", place, ifModifiedSince) {
+            parameter(
+                "lang",
+                if (language == "nb" || language == "nn" || language == "no") "no" else "en",
+            )
+        }
+
+    private suspend fun fetch(
+        path: String,
+        place: Place,
+        ifModifiedSince: String?,
+        extra: HttpRequestBuilder.() -> Unit = {},
+    ): Fetch {
         val response =
-            client.get("$baseUrl/weatherapi/locationforecast/2.0/complete") {
+            client.get("$baseUrl/weatherapi/$path") {
                 parameter("lat", Place.format(place.latitude))
                 parameter("lon", Place.format(place.longitude))
-                place.elevation?.let { parameter("altitude", it) }
+                extra()
                 ifModifiedSince?.let { header(HttpHeaders.IfModifiedSince, it) }
             }
         val expires = WeatherHttp.parseHttpDate(response.headers[HttpHeaders.Expires])
