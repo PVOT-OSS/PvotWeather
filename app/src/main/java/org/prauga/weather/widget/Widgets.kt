@@ -7,6 +7,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -14,8 +15,10 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.PreviewSizeMode
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.updateAll
@@ -28,11 +31,11 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.width
-import java.time.Instant
 import org.prauga.weather.R
 
 abstract class WeatherGlanceWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Single
+    override val sizeMode: SizeMode = SizeMode.Single
+    override val previewSizeMode: PreviewSizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val data = WidgetData.load(context)
@@ -40,7 +43,13 @@ abstract class WeatherGlanceWidget : GlanceAppWidget() {
         provideContent { GlanceTheme { WidgetFrame { Body(data, extra) } } }
     }
 
-    protected open suspend fun prepare(context: Context, data: WidgetData, id: GlanceId): Bitmap? =
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        val data = WidgetData.sample(context)
+        val extra = prepare(context, data, null)
+        provideContent { GlanceTheme { WidgetFrame { Body(data, extra) } } }
+    }
+
+    protected open suspend fun prepare(context: Context, data: WidgetData, id: GlanceId?): Bitmap? =
         null
 
     @Composable protected abstract fun ColumnScope.Body(data: WidgetData, bitmap: Bitmap?)
@@ -77,13 +86,29 @@ class HourlyWidget : WeatherGlanceWidget() {
 }
 
 class DailyWidget : WeatherGlanceWidget() {
+    override val sizeMode = SizeMode.Responsive(HEIGHTS)
+    override val previewSizeMode = SizeMode.Responsive(HEIGHTS)
+
     @Composable
     override fun ColumnScope.Body(data: WidgetData, bitmap: Bitmap?) {
+        val rows =
+            ((LocalSize.current.height.value - FIXED_HEIGHT_DP) / ROW_HEIGHT_DP)
+                .toInt()
+                .coerceIn(0, 5)
         NowHeader(data, wide = true)
-        Spacer(GlanceModifier.height(12.dp))
+        Spacer(GlanceModifier.height(6.dp))
         HourRow(data.hours)
-        Spacer(GlanceModifier.height(12.dp))
-        DayRows(data.days.drop(1).take(5))
+        if (rows > 0) {
+            Spacer(GlanceModifier.height(6.dp))
+            DayRows(data.days.drop(1).take(rows))
+        }
+    }
+
+    private companion object {
+        const val FIXED_HEIGHT_DP = 188f
+        const val ROW_HEIGHT_DP = 24f
+        val HEIGHTS =
+            listOf(200, 224, 248, 272, 296, 320, 344).map { DpSize(250.dp, it.dp) }.toSet()
     }
 }
 
@@ -99,22 +124,23 @@ class DetailsWidget : WeatherGlanceWidget() {
 }
 
 class SunWidget : WeatherGlanceWidget() {
-    override suspend fun prepare(context: Context, data: WidgetData, id: GlanceId): Bitmap? {
+    override suspend fun prepare(context: Context, data: WidgetData, id: GlanceId?): Bitmap? {
         val sunrise = data.sunrise ?: return null
         val sunset = data.sunset ?: return null
-        val options =
-            AppWidgetManager.getInstance(context)
-                .getAppWidgetOptions(GlanceAppWidgetManager(context).getAppWidgetId(id))
         val width =
-            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 }
-                ?: DEFAULT_WIDTH_DP
+            id?.let {
+                AppWidgetManager.getInstance(context)
+                    .getAppWidgetOptions(GlanceAppWidgetManager(context).getAppWidgetId(it))
+                    .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+                    .takeIf { width -> width > 0 }
+            } ?: PREVIEW_WIDTH_DP
         return SunWave.render(
             context,
             (width - FRAME_PADDING_DP).coerceAtLeast(MIN_WAVE_DP),
             ((width - FRAME_PADDING_DP) / WAVE_ASPECT).coerceAtLeast(MIN_WAVE_DP),
             sunrise,
             sunset,
-            Instant.now(),
+            data.now,
             data.zone,
         )
     }
@@ -122,7 +148,7 @@ class SunWidget : WeatherGlanceWidget() {
     @Composable
     override fun ColumnScope.Body(data: WidgetData, bitmap: Bitmap?) {
         val context = androidx.glance.LocalContext.current
-        val now = Instant.now()
+        val now = data.now
         val nextIsSunset =
             data.sunrise != null &&
                 data.sunset != null &&
@@ -173,7 +199,7 @@ class SunWidget : WeatherGlanceWidget() {
     }
 
     private companion object {
-        const val DEFAULT_WIDTH_DP = 250
+        const val PREVIEW_WIDTH_DP = 360
         const val FRAME_PADDING_DP = 32
         const val WAVE_ASPECT = 8
         const val MIN_WAVE_DP = 24
