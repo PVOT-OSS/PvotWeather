@@ -30,6 +30,22 @@
     <string name="condition_heavy_snow">Heavy snow</string>
     <string name="condition_thunderstorm">Thunderstorms</string>
     <string name="rain_likely_next_hour">Rain likely in the next hour</string>
+    <string name="rain_starting">Rain starting in about %1$d min</string>
+    <string name="rain_stopping">Rain stopping in about %1$d min</string>
+    <string name="rain_continuing">Rain for at least the next two hours</string>
+    <string name="alert_level_yellow">Yellow warning</string>
+    <string name="alert_level_orange">Orange warning</string>
+    <string name="alert_level_red">Red warning</string>
+    <string name="alert_until">Until %1$s</string>
+    <string name="alert_source">Warning from MET Norway</string>
+    <string name="average">Average</string>
+    <string name="average_above">Above the usual high for this time of year</string>
+    <string name="average_below">Below the usual high for this time of year</string>
+    <string name="average_close">Close to the usual high for this time of year</string>
+    <string name="average_detail">Today %1$s · usual %2$s</string>
+    <string name="average_source">Past 10 years, ERA5 via Open-Meteo</string>
+    <string name="about_era5">ERA5 (Copernicus)</string>
+    <string name="about_era5_summary">Past temperatures behind the usual high. Contains modified Copernicus Climate Change Service information.</string>
     <string name="rain_possible_next_hour">Might rain in the next hour</string>
 
     <string name="sources_values">Open-Meteo %1$s · MET Norway %2$s</string>

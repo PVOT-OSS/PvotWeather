@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -88,7 +89,11 @@ import com.prauga.pvot.coreui.PvotLoadingContent
 import com.prauga.pvot.designsystem.components.PvotCard
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.math.abs
 import org.prauga.weather.R
+import org.prauga.weather.core.data.Extras
+import org.prauga.weather.core.model.Alert
+import org.prauga.weather.core.model.AlertLevel
 import org.prauga.weather.core.model.DayPoint
 import org.prauga.weather.core.model.Forecast
 import org.prauga.weather.core.model.HourPoint
@@ -303,18 +308,20 @@ private fun ForecastContent(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 header()
                 Spacer(Modifier.height(150.dp))
-                NowBlock(forecast)
+                NowBlock(forecast, state.extras)
                 HourlyStrip(forecast)
             }
         }
+        if (state.extras.alerts.isNotEmpty())
+            item { AlertsCard(state.extras.alerts, forecast.place.zone) }
         item { DaysCard(forecast) }
-        item { Tiles(forecast) }
+        item { Tiles(forecast, state.extras.usualHigh) }
         item { Footer(state) }
     }
 }
 
 @Composable
-private fun NowBlock(forecast: Forecast) {
+private fun NowBlock(forecast: Forecast, extras: Extras) {
     val current = forecast.current ?: return
     val temperature = current.temperature ?: return
     val today = forecast.days.firstOrNull()
@@ -356,7 +363,7 @@ private fun NowBlock(forecast: Forecast) {
                 }
             }
         }
-        Text(summary(forecast), style = MaterialTheme.typography.titleMedium)
+        Text(summary(forecast, extras), style = MaterialTheme.typography.titleMedium)
         AnimatedVisibility(showSources) {
             Text(
                 sourcesLine(temperature),
@@ -392,7 +399,17 @@ private fun sourcesLine(value: Sourced): String {
 }
 
 @Composable
-private fun summary(forecast: Forecast): String {
+private fun summary(forecast: Forecast, extras: Extras): String {
+    val steps = extras.nowcast?.steps ?: forecast.minutely
+    when (val outlook = RainOutlook.of(steps, Instant.now())) {
+        is RainOutlook.Starting ->
+            if (outlook.minutes <= 120)
+                return stringResource(R.string.rain_starting, outlook.minutes)
+        is RainOutlook.Stopping -> return stringResource(R.string.rain_stopping, outlook.minutes)
+        RainOutlook.Continuing -> return stringResource(R.string.rain_continuing)
+        RainOutlook.Dry,
+        null -> Unit
+    }
     val current = forecast.current
     val condition = current?.condition?.value
     val next = forecast.hours.getOrNull(1)
@@ -576,13 +593,17 @@ private fun Sparkline(values: List<Double>, modifier: Modifier) {
 }
 
 @Composable
-private fun Tiles(forecast: Forecast) {
+private fun Tiles(forecast: Forecast, usualHigh: Double?) {
     val current = forecast.current ?: return
     val today = forecast.days.firstOrNull()
     val zone = forecast.place.zone
     val is24 = DateFormat.is24HourFormat(LocalContext.current)
     val tiles =
         buildList<@Composable (Modifier) -> Unit> {
+            val todayHigh = today?.temperatureMax?.value
+            if (usualHigh != null && todayHigh != null) {
+                add { m -> AverageTile(todayHigh, usualHigh, m) }
+            }
             val apparent = current.apparentTemperature
             val actual = current.temperature
             if (apparent != null && actual != null) {
@@ -697,6 +718,101 @@ private fun Tiles(forecast: Forecast) {
         }
     }
 }
+
+@Composable
+private fun AverageTile(todayHigh: Double, usualHigh: Double, modifier: Modifier) {
+    val unit = LocalUnits.current.temperature
+    val difference = degrees(todayHigh) - degrees(usualHigh)
+    val caption =
+        when {
+            todayHigh - usualHigh >= 1.5 -> R.string.average_above
+            usualHigh - todayHigh >= 1.5 -> R.string.average_below
+            else -> R.string.average_close
+        }
+    Tile(
+        stringResource(R.string.average),
+        (if (difference > 0) "+" else if (difference < 0) "−" else "") +
+            stringResource(R.string.degrees, abs(difference)),
+        stringResource(caption),
+        modifier,
+        source = stringResource(R.string.average_source),
+    ) {
+        Text(
+            stringResource(
+                R.string.average_detail,
+                stringResource(R.string.degrees, degrees(todayHigh)),
+                stringResource(R.string.degrees, degrees(usualHigh)),
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun AlertsCard(alerts: List<Alert>, zone: ZoneId) {
+    val uriHandler = LocalUriHandler.current
+    val is24 = DateFormat.is24HourFormat(LocalContext.current)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        alerts
+            .sortedByDescending { it.level }
+            .forEach { alert ->
+                PvotCard(
+                    Modifier.fillMaxWidth(),
+                    onClick = alert.url?.let { url -> { uriHandler.openUri(url) } },
+                ) {
+                    Row(Modifier.height(IntrinsicSize.Min)) {
+                        Box(
+                            Modifier.width(6.dp).fillMaxHeight().background(alertColor(alert.level))
+                        )
+                        Column(
+                            Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                stringResource(alertLevelLabel(alert.level)) + " · " + alert.event,
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                listOfNotNull(
+                                        alert.area.ifEmpty { null },
+                                        alert.ends?.let {
+                                            stringResource(
+                                                R.string.alert_until,
+                                                Formats.time(it, zone, is24),
+                                            )
+                                        },
+                                    )
+                                    .joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(alert.description, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                stringResource(R.string.alert_source),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+    }
+}
+
+private fun alertColor(level: AlertLevel) =
+    when (level) {
+        AlertLevel.YELLOW -> Color(0xFFF2C94C)
+        AlertLevel.ORANGE -> Color(0xFFF2994A)
+        AlertLevel.RED -> Color(0xFFEB5757)
+    }
+
+private fun alertLevelLabel(level: AlertLevel) =
+    when (level) {
+        AlertLevel.YELLOW -> R.string.alert_level_yellow
+        AlertLevel.ORANGE -> R.string.alert_level_orange
+        AlertLevel.RED -> R.string.alert_level_red
+    }
 
 @Composable
 private fun Tile(

@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.prauga.weather.core.data.Extras
+import org.prauga.weather.core.data.ExtrasRepository
 import org.prauga.weather.core.data.ForecastRepository
 import org.prauga.weather.core.data.PlaceRepository
 import org.prauga.weather.core.data.RefreshResult
@@ -34,11 +36,13 @@ data class ForecastUiState(
     val noPlaces: Boolean = false,
     val refreshing: Boolean = false,
     val failed: Set<Provider> = emptySet(),
+    val extras: Extras = Extras(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ForecastViewModel(
     private val forecasts: ForecastRepository,
+    private val extras: ExtrasRepository,
     places: PlaceRepository,
     preferences: WeatherPreferences,
     private val locateCurrentPlace: LocateCurrentPlace,
@@ -65,7 +69,10 @@ class ForecastViewModel(
                 if (place == null) {
                     flowOf(ForecastUiState(loading = !loaded, noPlaces = loaded))
                 } else {
-                    combine(forecasts.observe(place), refresh) { snapshot, r ->
+                    combine(forecasts.observe(place), extras.observe(place), refresh) {
+                        snapshot,
+                        more,
+                        r ->
                         ForecastUiState(
                             place = place,
                             forecast = snapshot.forecast,
@@ -73,6 +80,7 @@ class ForecastViewModel(
                             loading = false,
                             refreshing = r.refreshing,
                             failed = r.failed,
+                            extras = more,
                         )
                     }
                 }
@@ -87,7 +95,9 @@ class ForecastViewModel(
             if (place.isCurrentLocation && locateCurrentPlace.hasPermission) {
                 locateCurrentPlace()?.let { place = it }
             }
+            val extrasJob = launch { extras.refresh(place) }
             val results = forecasts.refresh(place, force)
+            extrasJob.join()
             refresh.update { state ->
                 RefreshState(
                     refreshing = false,
