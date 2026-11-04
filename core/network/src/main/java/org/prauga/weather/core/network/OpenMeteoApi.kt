@@ -26,6 +26,8 @@ class OpenMeteoApi(private val client: HttpClient, private val baseUrl: String =
                 parameter("forecast_days", 16)
                 parameter("wind_speed_unit", "ms")
                 parameter("timeformat", "unixtime")
+                parameter("minutely_15", "precipitation")
+                parameter("forecast_minutely_15", 8)
             }
         if (!response.status.isSuccess()) {
             throw ProviderHttpException(response.status.value, "Open-Meteo: ${response.status}")

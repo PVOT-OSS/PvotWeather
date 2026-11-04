@@ -7,6 +7,7 @@ import java.time.Instant
 import java.time.ZoneId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.prauga.weather.core.model.PrecipitationStep
 import org.prauga.weather.core.model.Provider
 import org.prauga.weather.core.model.ProviderDay
 import org.prauga.weather.core.model.ProviderForecast
@@ -76,7 +77,15 @@ object OpenMeteoParser {
                     isDay = c.isDay?.let { it > 0 },
                 )
             }
-        return ProviderForecast(Provider.OPEN_METEO, current, hours, days)
+        val minutely =
+            response.minutely?.let { m ->
+                m.time.indices.mapNotNull { i ->
+                    m.precipitation.getOrNull(i)?.let {
+                        PrecipitationStep(Instant.ofEpochSecond(m.time[i]), it * 4)
+                    }
+                }
+            } ?: emptyList()
+        return ProviderForecast(Provider.OPEN_METEO, current, hours, days, minutely)
     }
 
     private fun List<Double?>.at(i: Int): Double? = getOrNull(i)
@@ -88,6 +97,13 @@ internal data class OmResponse(
     val current: OmCurrent? = null,
     val hourly: OmHourly? = null,
     val daily: OmDaily? = null,
+    @SerialName("minutely_15") val minutely: OmMinutely? = null,
+)
+
+@Serializable
+internal data class OmMinutely(
+    val time: List<Long> = emptyList(),
+    val precipitation: List<Double?> = emptyList(),
 )
 
 @Serializable
