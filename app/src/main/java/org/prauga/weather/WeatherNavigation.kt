@@ -30,6 +30,7 @@ import org.prauga.weather.compare.CompareScreen
 import org.prauga.weather.compare.CompareViewModel
 import org.prauga.weather.core.model.TemperatureUnit
 import org.prauga.weather.core.model.WindUnit
+import org.prauga.weather.forecast.BackdropPreviewScreen
 import org.prauga.weather.forecast.ForecastRoute
 import org.prauga.weather.forecast.ForecastViewModel
 import org.prauga.weather.forecast.MenuItem
@@ -50,6 +51,8 @@ import org.prauga.weather.settings.Units
 @Serializable data object CompareKey : NavKey
 
 @Serializable data object AirQualityKey : NavKey
+
+@Serializable data object BackdropPreviewKey : NavKey
 
 @Composable
 fun WeatherNavigation(container: AppContainer) {
@@ -86,10 +89,14 @@ fun WeatherNavigation(container: AppContainer) {
                                 onOpenPlaces =
                                     if (twoPane) null else ({ backStack.add(PlacesKey) }),
                                 menu =
-                                    listOf(
+                                    listOfNotNull(
                                         MenuItem(R.string.compare) { backStack.add(CompareKey) },
                                         MenuItem(R.string.settings) { backStack.add(SettingsKey) },
                                         MenuItem(R.string.about) { backStack.add(AboutKey) },
+                                        MenuItem(R.string.backdrops) {
+                                                backStack.add(BackdropPreviewKey)
+                                            }
+                                            .takeIf { BuildConfig.DEBUG },
                                     ),
                                 onOpenAirQuality = { backStack.add(AirQualityKey) },
                             )
@@ -146,6 +153,9 @@ fun WeatherNavigation(container: AppContainer) {
                         )
                     }
                     entry<AboutKey> { AboutScreen(onBack = { backStack.removeLastOrNull() }) }
+                    entry<BackdropPreviewKey> {
+                        BackdropPreviewScreen(onBack = { backStack.removeLastOrNull() })
+                    }
                     entry<SettingsKey> {
                         SettingsScreen(
                             container.preferences,
