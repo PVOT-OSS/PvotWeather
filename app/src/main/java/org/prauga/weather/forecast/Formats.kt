@@ -68,6 +68,17 @@ object Formats {
         }
 
     @StringRes
+    fun aqiLevel(aqi: Int): Int =
+        when {
+            aqi <= 50 -> R.string.aqi_good
+            aqi <= 100 -> R.string.aqi_moderate
+            aqi <= 150 -> R.string.aqi_sensitive
+            aqi <= 200 -> R.string.aqi_unhealthy
+            aqi <= 300 -> R.string.aqi_very_unhealthy
+            else -> R.string.aqi_hazardous
+        }
+
+    @StringRes
     fun visibility(metres: Double): Int =
         when {
             metres >= 10_000 -> R.string.visibility_clear

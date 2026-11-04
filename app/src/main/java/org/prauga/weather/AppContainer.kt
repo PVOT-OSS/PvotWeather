@@ -10,6 +10,7 @@ import org.prauga.weather.core.data.ForecastRepository
 import org.prauga.weather.core.data.PlaceRepository
 import org.prauga.weather.core.data.WeatherPreferences
 import org.prauga.weather.core.data.cache.WeatherDatabase
+import org.prauga.weather.core.network.AirQualityApi
 import org.prauga.weather.core.network.ArchiveApi
 import org.prauga.weather.core.network.GeocodingApi
 import org.prauga.weather.core.network.MetNorwayApi
@@ -30,6 +31,7 @@ class AppContainer(context: Context) {
             database.forecastCache(),
             metNorway,
             ArchiveApi(http),
+            AirQualityApi(http),
             { Locale.getDefault().language },
         )
     val places = PlaceRepository(database.places(), database.forecastCache())

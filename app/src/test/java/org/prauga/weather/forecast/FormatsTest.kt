@@ -38,4 +38,11 @@ class FormatsTest {
         assertEquals(R.string.uv_high, Formats.uvLevel(7.0))
         assertEquals(R.string.uv_extreme, Formats.uvLevel(11.0))
     }
+
+    @Test
+    fun airQualityLevels() {
+        assertEquals(R.string.aqi_good, Formats.aqiLevel(50))
+        assertEquals(R.string.aqi_moderate, Formats.aqiLevel(84))
+        assertEquals(R.string.aqi_hazardous, Formats.aqiLevel(301))
+    }
 }
