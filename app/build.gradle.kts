@@ -12,11 +12,16 @@ android {
 
     defaultConfig {
         applicationId = "org.prauga.weather"
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 10000
+        versionName = "1.0.0"
     }
 
     buildFeatures { buildConfig = true }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 
     buildTypes {
         debug { applicationIdSuffix = ".dev" }
