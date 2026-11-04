@@ -90,6 +90,23 @@
     <string name="attribution_met">MET Norway</string>
     <string name="attribution_licence">CC BY 4.0</string>
 
+    <string name="menu">Menu</string>
+    <string name="places">Places</string>
+    <string name="current_location">Current location</string>
+    <string name="no_places">Add a place to see its weather.</string>
+    <string name="add_place">Add a place</string>
+    <string name="search_places">Search for a city</string>
+    <string name="clear_search">Clear search</string>
+    <string name="use_my_location">Use my location</string>
+    <string name="locating">Finding where you are…</string>
+    <string name="locate_failed">Can\'t find your location. Check that location is on and allowed.</string>
+    <string name="saved_places">Saved places</string>
+    <string name="remove_place">Remove %1$s</string>
+    <string name="searching">Searching…</string>
+    <string name="search_failed">Search can\'t reach Open-Meteo right now.</string>
+    <string name="no_results">No places found.</string>
+    <string name="search_credit">Place search by Open-Meteo, with data from GeoNames (CC BY 4.0).</string>
+
     <string name="no_forecast_title">No forecast yet</string>
     <string name="no_forecast_message">Open-Meteo and MET Norway can\'t be reached. Check the connection and try again.</string>
 </resources>

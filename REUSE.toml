@@ -29,3 +29,9 @@ path = "core/network/src/test/resources/fixtures/met-*.json"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "The Norwegian Meteorological Institute (MET Norway)"
 SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["app/src/main/res/drawable/ic_check.xml", "app/src/main/res/drawable/ic_close.xml", "app/src/main/res/drawable/ic_delete.xml", "app/src/main/res/drawable/ic_menu.xml", "app/src/main/res/drawable/ic_my_location.xml", "app/src/main/res/drawable/ic_place.xml", "app/src/main/res/drawable/ic_search.xml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Google LLC (Material Icons)"
+SPDX-License-Identifier = "Apache-2.0"

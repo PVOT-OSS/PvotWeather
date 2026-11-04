@@ -4,6 +4,7 @@
 package org.prauga.weather.forecast
 
 import android.text.format.DateFormat
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -27,25 +28,33 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -54,6 +63,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -66,11 +76,13 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prauga.pvot.coreui.PvotEmptyContent
 import com.prauga.pvot.coreui.PvotErrorContent
 import com.prauga.pvot.coreui.PvotLoadingContent
 import com.prauga.pvot.designsystem.components.PvotCard
@@ -80,8 +92,10 @@ import org.prauga.weather.R
 import org.prauga.weather.core.model.DayPoint
 import org.prauga.weather.core.model.Forecast
 import org.prauga.weather.core.model.HourPoint
+import org.prauga.weather.core.model.Place
 import org.prauga.weather.core.model.Provider
 import org.prauga.weather.core.model.Sourced
+import org.prauga.weather.placeTitle
 
 private val HighColor = Color(0xFFFF8A3D)
 private val LowColor = Color(0xFF4FA3E0)
@@ -89,20 +103,37 @@ private val RainColor = Color(0xFF4FA3E0)
 
 private const val TEMPERATURE_SPREAD = 3.0
 
+data class MenuItem(@StringRes val label: Int, val onClick: () -> Unit)
+
 @Composable
-fun ForecastRoute(viewModel: ForecastViewModel) {
+fun ForecastRoute(
+    viewModel: ForecastViewModel,
+    onOpenPlaces: () -> Unit,
+    menu: List<MenuItem> = emptyList(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // MET's terms: fetch only while the app is in use.
     LifecycleStartEffect(Unit) {
         viewModel.refresh()
         onStopOrDispose {}
     }
-    ForecastScreen(state, onRefresh = { viewModel.refresh(force = true) })
+    LaunchedEffect(state.place?.id) { if (state.place != null) viewModel.refresh() }
+    ForecastScreen(
+        state,
+        onRefresh = { viewModel.refresh(force = true) },
+        onOpenPlaces = onOpenPlaces,
+        menu = listOf(MenuItem(R.string.places, onOpenPlaces)) + menu,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ForecastScreen(state: ForecastUiState, onRefresh: () -> Unit) {
+fun ForecastScreen(
+    state: ForecastUiState,
+    onRefresh: () -> Unit,
+    onOpenPlaces: () -> Unit,
+    menu: List<MenuItem>,
+) {
     val background = MaterialTheme.colorScheme.background
     val forecast = state.forecast
     val current = forecast?.current
@@ -113,38 +144,48 @@ fun ForecastScreen(state: ForecastUiState, onRefresh: () -> Unit) {
     ) {
         Box(Modifier.fillMaxSize()) {
             val listState = rememberLazyListState()
-            WeatherBackdrop(
-                Backdrop.of(
-                    current?.condition?.value,
-                    current?.isDay,
-                    current?.time ?: Instant.now(),
-                    forecast?.days?.firstOrNull()?.sunrise,
-                    forecast?.days?.firstOrNull()?.sunset,
-                ),
-                background,
-                isSystemInDarkTheme(),
-                Modifier.fillMaxWidth().fillMaxHeight(0.62f).graphicsLayer {
-                    translationY =
-                        if (listState.firstVisibleItemIndex == 0) {
-                            -listState.firstVisibleItemScrollOffset.toFloat()
-                        } else {
-                            -size.height
-                        }
-                },
-            )
+            if (forecast != null) {
+                WeatherBackdrop(
+                    Backdrop.of(
+                        current?.condition?.value,
+                        current?.isDay,
+                        current?.time ?: Instant.now(),
+                        forecast?.days?.firstOrNull()?.sunrise,
+                        forecast?.days?.firstOrNull()?.sunset,
+                    ),
+                    background,
+                    isSystemInDarkTheme(),
+                    Modifier.fillMaxWidth().fillMaxHeight(0.62f).graphicsLayer {
+                        translationY =
+                            if (listState.firstVisibleItemIndex == 0) {
+                                -listState.firstVisibleItemScrollOffset.toFloat()
+                            } else {
+                                -size.height
+                            }
+                    },
+                )
+            }
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
                 onRefresh = onRefresh,
                 modifier = Modifier.fillMaxSize(),
             ) {
+                val header: @Composable () -> Unit = {
+                    PlaceHeader(state.place, onOpenPlaces, menu)
+                }
                 when {
-                    forecast != null -> ForecastContent(state, forecast, listState)
-                    state.loading || state.refreshing ->
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            PvotLoadingContent()
+                    forecast != null -> ForecastContent(state, forecast, listState, header)
+                    state.noPlaces ->
+                        Status(header) {
+                            PvotEmptyContent(
+                                message = stringResource(R.string.no_places),
+                                actionLabel = stringResource(R.string.add_place),
+                                onAction = onOpenPlaces,
+                            )
                         }
+                    state.loading || state.refreshing -> Status(header) { PvotLoadingContent() }
                     else ->
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Status(header) {
                             PvotErrorContent(
                                 title = stringResource(R.string.no_forecast_title),
                                 message = stringResource(R.string.no_forecast_message),
@@ -154,6 +195,67 @@ fun ForecastScreen(state: ForecastUiState, onRefresh: () -> Unit) {
                 }
             }
             StatusBarScrim(background)
+        }
+    }
+}
+
+@Composable
+private fun Status(header: @Composable () -> Unit, content: @Composable () -> Unit) {
+    Column(
+        Modifier.fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 20.dp)
+    ) {
+        Box(Modifier.padding(top = 12.dp)) { header() }
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { content() }
+    }
+}
+
+@Composable
+private fun PlaceHeader(place: Place?, onOpenPlaces: () -> Unit, menu: List<MenuItem>) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.weight(1f)
+                .clip(MaterialTheme.shapes.small)
+                .clickable(onClickLabel = stringResource(R.string.places), onClick = onOpenPlaces)
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painterResource(
+                    if (place?.isCurrentLocation == true) R.drawable.ic_my_location
+                    else R.drawable.ic_place
+                ),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                place?.let { placeTitle(it) } ?: stringResource(R.string.app_name),
+                modifier = Modifier.padding(start = 8.dp),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Box {
+            IconButton(onClick = { menuOpen = true }) {
+                Icon(
+                    painterResource(R.drawable.ic_menu),
+                    contentDescription = stringResource(R.string.menu),
+                )
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                menu.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(item.label)) },
+                        onClick = {
+                            menuOpen = false
+                            item.onClick()
+                        },
+                    )
+                }
+            }
         }
     }
 }
@@ -169,7 +271,12 @@ private fun StatusBarScrim(color: Color) {
 }
 
 @Composable
-private fun ForecastContent(state: ForecastUiState, forecast: Forecast, listState: LazyListState) {
+private fun ForecastContent(
+    state: ForecastUiState,
+    forecast: Forecast,
+    listState: LazyListState,
+    header: @Composable () -> Unit,
+) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -185,13 +292,8 @@ private fun ForecastContent(state: ForecastUiState, forecast: Forecast, listStat
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(
-                    forecast.place.name,
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(170.dp))
+                header()
+                Spacer(Modifier.height(150.dp))
                 NowBlock(forecast)
                 HourlyStrip(forecast)
             }
