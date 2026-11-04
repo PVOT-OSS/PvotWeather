@@ -13,6 +13,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import org.prauga.weather.R
 import org.prauga.weather.core.model.Condition
+import org.prauga.weather.core.model.Pollen
 import org.prauga.weather.core.model.TemperatureUnit
 import org.prauga.weather.core.model.WindUnit
 
@@ -65,6 +66,84 @@ object Formats {
             index < 8 -> R.string.uv_high
             index < 11 -> R.string.uv_very_high
             else -> R.string.uv_extreme
+        }
+
+    fun millimetres(value: Double): String =
+        if (value >= 10) value.roundToInt().toString()
+        else String.format(Locale.getDefault(), "%.1f", value)
+
+    fun hours(seconds: Double): String = String.format(Locale.getDefault(), "%.1f", seconds / 3600)
+
+    fun flow(value: Double): String =
+        if (value >= 10) value.roundToInt().toString()
+        else String.format(Locale.getDefault(), "%.2f", value)
+
+    @StringRes
+    fun pressureTrend(now: Double, later: Double?): Int =
+        when {
+            later == null -> R.string.pressure_sea_level
+            later - now >= 1 -> R.string.pressure_rising
+            now - later >= 1 -> R.string.pressure_falling
+            else -> R.string.pressure_steady
+        }
+
+    @StringRes
+    fun moonPhase(degrees: Double): Int {
+        val d = (degrees % 360 + 360) % 360
+        return when {
+            d < 11.25 || d >= 348.75 -> R.string.moon_new
+            d < 78.75 -> R.string.moon_waxing_crescent
+            d < 101.25 -> R.string.moon_first_quarter
+            d < 168.75 -> R.string.moon_waxing_gibbous
+            d < 191.25 -> R.string.moon_full
+            d < 258.75 -> R.string.moon_waning_gibbous
+            d < 281.25 -> R.string.moon_last_quarter
+            else -> R.string.moon_waning_crescent
+        }
+    }
+
+    fun moonIllumination(degrees: Double): Int =
+        ((1 - kotlin.math.cos(Math.toRadians(degrees))) / 2 * 100).roundToInt()
+
+    @StringRes
+    fun riverLevel(discharge: Double, mean: Double): Int =
+        when {
+            mean <= 0 -> R.string.river_normal
+            discharge >= mean * 2 -> R.string.river_very_high
+            discharge >= mean * 1.3 -> R.string.river_high
+            discharge <= mean * 0.7 -> R.string.river_low
+            else -> R.string.river_normal
+        }
+
+    @StringRes
+    fun pollenName(pollen: Pollen): Int =
+        when (pollen) {
+            Pollen.ALDER -> R.string.pollen_alder
+            Pollen.BIRCH -> R.string.pollen_birch
+            Pollen.GRASS -> R.string.pollen_grass
+            Pollen.MUGWORT -> R.string.pollen_mugwort
+            Pollen.OLIVE -> R.string.pollen_olive
+            Pollen.RAGWEED -> R.string.pollen_ragweed
+        }
+
+    @StringRes
+    fun europeanAqiLevel(aqi: Int): Int =
+        when {
+            aqi <= 20 -> R.string.eaqi_good
+            aqi <= 40 -> R.string.eaqi_fair
+            aqi <= 60 -> R.string.eaqi_moderate
+            aqi <= 80 -> R.string.eaqi_poor
+            aqi <= 100 -> R.string.eaqi_very_poor
+            else -> R.string.eaqi_extremely_poor
+        }
+
+    @StringRes
+    fun metAqiLevel(index: Double): Int =
+        when {
+            index < 2 -> R.string.met_aqi_low
+            index < 3 -> R.string.met_aqi_moderate
+            index < 4 -> R.string.met_aqi_high
+            else -> R.string.met_aqi_very_high
         }
 
     @StringRes

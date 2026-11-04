@@ -51,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -121,6 +122,7 @@ fun ForecastRoute(
     viewModel: ForecastViewModel,
     onOpenPlaces: (() -> Unit)?,
     menu: List<MenuItem> = emptyList(),
+    onOpenAirQuality: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // MET's terms: fetch only while the app is in use.
@@ -134,6 +136,7 @@ fun ForecastRoute(
         onRefresh = { viewModel.refresh(force = true) },
         onOpenPlaces = onOpenPlaces,
         menu = listOfNotNull(onOpenPlaces?.let { MenuItem(R.string.places, it) }) + menu,
+        onOpenAirQuality = onOpenAirQuality,
     )
 }
 
@@ -144,6 +147,7 @@ fun ForecastScreen(
     onRefresh: () -> Unit,
     onOpenPlaces: (() -> Unit)?,
     menu: List<MenuItem>,
+    onOpenAirQuality: () -> Unit = {},
 ) {
     val background = MaterialTheme.colorScheme.background
     val forecast = state.forecast
@@ -185,7 +189,8 @@ fun ForecastScreen(
                     PlaceHeader(state.place, onOpenPlaces, menu)
                 }
                 when {
-                    forecast != null -> ForecastContent(state, forecast, listState, header)
+                    forecast != null ->
+                        ForecastContent(state, forecast, listState, header, onOpenAirQuality)
                     state.noPlaces ->
                         Status(header) {
                             PvotEmptyContent(
@@ -212,7 +217,8 @@ fun ForecastScreen(
 }
 
 @Composable
-private fun degrees(celsius: Double): Int = Formats.degrees(celsius, LocalUnits.current.temperature)
+internal fun degrees(celsius: Double): Int =
+    Formats.degrees(celsius, LocalUnits.current.temperature)
 
 @Composable
 private fun wind(metresPerSecond: Double): Int =
@@ -304,6 +310,7 @@ private fun ForecastContent(
     forecast: Forecast,
     listState: LazyListState,
     header: @Composable () -> Unit,
+    onOpenAirQuality: () -> Unit,
 ) {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     PvotScreen(
@@ -330,7 +337,7 @@ private fun ForecastContent(
         if (state.extras.alerts.isNotEmpty())
             item { AlertsCard(state.extras.alerts, forecast.place.zone) }
         item { DaysCard(forecast) }
-        item { Tiles(forecast, state.extras) }
+        item { Tiles(forecast, state.extras, onOpenAirQuality) }
         item { Footer(state) }
     }
 }
@@ -456,6 +463,8 @@ private fun HourlyStrip(forecast: Forecast) {
     val is24 = DateFormat.is24HourFormat(LocalContext.current)
     val zone = forecast.place.zone
     val hours = forecast.hours.take(25)
+    val showChance = hours.any { (it.precipitationProbability?.value ?: 0.0) >= 20 }
+    val showAmount = hours.any { (it.precipitation?.value ?: 0.0) >= 0.1 }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         itemsIndexed(hours) { index, hour ->
             val shown = if (index == 0) forecast.current ?: hour else hour
@@ -465,13 +474,21 @@ private fun HourlyStrip(forecast: Forecast) {
                     else Formats.hour(hour.time, zone, is24),
                 hour = shown,
                 highlighted = index == 0,
+                showChance = showChance,
+                showAmount = showAmount,
             )
         }
     }
 }
 
 @Composable
-private fun HourColumn(label: String, hour: HourPoint, highlighted: Boolean) {
+private fun HourColumn(
+    label: String,
+    hour: HourPoint,
+    highlighted: Boolean,
+    showChance: Boolean,
+    showAmount: Boolean,
+) {
     val probability = hour.precipitationProbability?.value?.toInt() ?: 0
     val differs =
         hour.condition?.conflicts == true || (hour.temperature?.spread ?: 0.0) >= TEMPERATURE_SPREAD
@@ -486,11 +503,23 @@ private fun HourColumn(label: String, hour: HourPoint, highlighted: Boolean) {
             fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
         )
         ConditionIcon(hour.condition?.value, hour.isDay, Modifier.size(30.dp))
-        Text(
-            if (probability >= 20) stringResource(R.string.percent, probability) else "",
-            style = MaterialTheme.typography.labelSmall,
-            color = RainColor,
-        )
+        if (showChance) {
+            Text(
+                if (probability >= 20) stringResource(R.string.percent, probability) else "",
+                style = MaterialTheme.typography.labelSmall,
+                color = RainColor,
+            )
+        }
+        if (showAmount) {
+            Text(
+                hour.precipitation
+                    ?.value
+                    ?.takeIf { it >= 0.1 }
+                    ?.let { stringResource(R.string.mm, Formats.millimetres(it)) } ?: "",
+                style = MaterialTheme.typography.labelSmall,
+                color = RainColor,
+            )
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 hour.temperature?.let { stringResource(R.string.degrees, degrees(it.value)) }
@@ -514,6 +543,7 @@ private fun DaysCard(forecast: Forecast) {
                 stringResource(R.string.days_title, forecast.days.size),
                 style = MaterialTheme.typography.titleSmall,
             )
+            forecast.yesterday?.let { Box(Modifier.alpha(0.6f)) { DayRow(-1, it, forecast) } }
             days.forEachIndexed { index, day -> DayRow(index, day, forecast) }
             if (forecast.days.size > 7) {
                 PvotButton(
@@ -548,6 +578,7 @@ private fun DaysCard(forecast: Forecast) {
 private fun DayRow(index: Int, day: DayPoint, forecast: Forecast) {
     val label =
         when (index) {
+            -1 -> stringResource(R.string.yesterday)
             0 -> stringResource(R.string.today)
             1 -> stringResource(R.string.tomorrow)
             else -> Formats.weekday(day.date)
@@ -607,7 +638,7 @@ private fun Sparkline(values: List<Double>, modifier: Modifier) {
 }
 
 @Composable
-private fun Tiles(forecast: Forecast, extras: Extras) {
+private fun Tiles(forecast: Forecast, extras: Extras, onOpenAirQuality: () -> Unit) {
     val usualHigh = extras.usualHigh
     val current = forecast.current ?: return
     val today = forecast.days.firstOrNull()
@@ -653,7 +684,7 @@ private fun Tiles(forecast: Forecast, extras: Extras) {
                     }
                 }
             }
-            extras.airQuality?.let { air -> add { m -> AirQualityTile(air, m) } }
+            extras.airQuality?.let { air -> add { m -> AirQualityTile(air, m, onOpenAirQuality) } }
             current.visibility?.let { v ->
                 add { m ->
                     Tile(
@@ -721,6 +752,7 @@ private fun Tiles(forecast: Forecast, extras: Extras) {
                     )
                 }
             }
+            addAll(moreTiles(forecast, extras))
         }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         tiles.chunked(2).forEach { row ->
@@ -766,13 +798,19 @@ private fun AverageTile(todayHigh: Double, usualHigh: Double, modifier: Modifier
 }
 
 @Composable
-private fun AirQualityTile(air: AirQuality, modifier: Modifier) {
+private fun AirQualityTile(air: AirQuality, modifier: Modifier, onOpen: () -> Unit) {
     Tile(
         stringResource(R.string.air_quality),
         air.usAqi.toString(),
-        air.pm25?.let { stringResource(R.string.air_pm25, it.roundToInt()) } ?: "",
+        listOfNotNull(
+                air.pm25?.let { stringResource(R.string.air_pm25, it.roundToInt()) },
+                air.pm10?.let { stringResource(R.string.air_pm10, it.roundToInt()) },
+                air.europeanAqi?.let { stringResource(R.string.air_european, it) },
+            )
+            .joinToString("\n"),
         modifier,
         source = stringResource(R.string.air_source),
+        onClick = onOpen,
     ) {
         Text(
             stringResource(Formats.aqiLevel(air.usAqi)),
@@ -865,15 +903,16 @@ private fun alertLevelLabel(level: AlertLevel) =
     }
 
 @Composable
-private fun Tile(
+internal fun Tile(
     title: String,
     value: String,
     caption: String,
     modifier: Modifier,
     source: String? = null,
+    onClick: (() -> Unit)? = null,
     extra: @Composable () -> Unit = {},
 ) {
-    PvotCard(modifier) {
+    PvotCard(modifier, onClick = onClick) {
         Column(
             Modifier.padding(16.dp).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),

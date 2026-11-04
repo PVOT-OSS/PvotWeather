@@ -23,14 +23,19 @@ import androidx.compose.ui.unit.dp
 
 data class Series(val color: Color, val values: List<Double?>)
 
+data class Band(val color: Color, val low: List<Double?>, val high: List<Double?>)
+
 @Composable
 fun ComparisonChart(
     series: List<Series>,
     axisLabels: List<String>,
     format: (Double) -> String,
     modifier: Modifier = Modifier,
+    bands: List<Band> = emptyList(),
 ) {
-    val all = series.flatMap { it.values.filterNotNull() }
+    val all =
+        series.flatMap { it.values.filterNotNull() } +
+            bands.flatMap { it.low.filterNotNull() + it.high.filterNotNull() }
     if (all.isEmpty()) return
     val min = all.min()
     val max = all.max().let { if (it - min < 1) min + 1 else it }
@@ -47,6 +52,27 @@ fun ComparisonChart(
             val dash = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
             listOf(0f, size.height / 2, size.height).forEach { y ->
                 drawLine(grid, Offset(0f, y), Offset(size.width, y), 1.dp.toPx(), pathEffect = dash)
+            }
+            bands.forEach { band ->
+                val count = band.low.size
+                if (count < 2) return@forEach
+                fun x(i: Int) = size.width * i / (count - 1)
+                fun y(v: Double) = size.height * (1 - ((v - min) / (max - min))).toFloat()
+                for (i in 0 until count - 1) {
+                    val l0 = band.low[i] ?: continue
+                    val h0 = band.high.getOrNull(i) ?: continue
+                    val l1 = band.low[i + 1] ?: continue
+                    val h1 = band.high.getOrNull(i + 1) ?: continue
+                    val quad =
+                        Path().apply {
+                            moveTo(x(i), y(h0))
+                            lineTo(x(i + 1), y(h1))
+                            lineTo(x(i + 1), y(l1))
+                            lineTo(x(i), y(l0))
+                            close()
+                        }
+                    drawPath(quad, band.color)
+                }
             }
             series.forEach { s ->
                 val count = s.values.size

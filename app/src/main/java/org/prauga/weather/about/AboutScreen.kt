@@ -33,6 +33,11 @@ private val sources =
         Link(R.string.about_geonames, R.string.about_geonames_summary, "https://www.geonames.org/"),
         Link(R.string.about_cams, R.string.about_cams_summary, "https://atmosphere.copernicus.eu/"),
         Link(
+            R.string.about_glofas,
+            R.string.about_glofas_summary,
+            "https://global-flood.emergency.copernicus.eu/",
+        ),
+        Link(
             R.string.about_era5,
             R.string.about_era5_summary,
             "https://cds.climate.copernicus.eu/",
