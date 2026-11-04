@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 plugins {
-    alias(libs.plugins.pvot.android.application)
-    alias(libs.plugins.pvot.android.compose)
+    alias(libs.plugins.weather.android.application)
+    alias(libs.plugins.weather.android.compose)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -45,7 +45,6 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-    testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

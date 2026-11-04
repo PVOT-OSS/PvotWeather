@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pluginManagement {
-    includeBuild("PvotLib/build-logic")
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -23,6 +23,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://pvot-oss.github.io/PvotLib/maven") {
+            content { includeGroup("com.prauga.pvot") }
+        }
     }
 }
 
@@ -35,5 +38,3 @@ include(":core:model")
 include(":core:network")
 
 include(":core:data")
-
-includeBuild("PvotLib")
