@@ -30,4 +30,6 @@ rootProject.name = "Weather"
 
 include(":app")
 
+include(":core:model")
+
 includeBuild("PvotLib")
