@@ -46,6 +46,7 @@ class ForecastViewModel(
     places: PlaceRepository,
     preferences: WeatherPreferences,
     private val locateCurrentPlace: LocateCurrentPlace,
+    private val onRefreshed: suspend () -> Unit = {},
 ) : ViewModel() {
 
     private data class Selection(val place: Place?, val loaded: Boolean)
@@ -98,6 +99,7 @@ class ForecastViewModel(
             val extrasJob = launch { extras.refresh(place) }
             val results = forecasts.refresh(place, force)
             extrasJob.join()
+            runCatching { onRefreshed() }
             refresh.update { state ->
                 RefreshState(
                     refreshing = false,

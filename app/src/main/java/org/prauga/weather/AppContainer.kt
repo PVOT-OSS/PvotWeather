@@ -4,6 +4,7 @@
 package org.prauga.weather
 
 import android.content.Context
+import androidx.glance.appwidget.updateAll
 import java.util.Locale
 import org.prauga.weather.core.data.ExtrasRepository
 import org.prauga.weather.core.data.ForecastRepository
@@ -18,8 +19,9 @@ import org.prauga.weather.core.network.OpenMeteoApi
 import org.prauga.weather.core.network.WeatherHttp
 import org.prauga.weather.location.LocateCurrentPlace
 import org.prauga.weather.location.LocationFinder
+import org.prauga.weather.widget.WeatherWidget
 
-class AppContainer(context: Context) {
+class AppContainer(private val context: Context) {
     private val http = WeatherHttp.client(WeatherHttp.userAgent(BuildConfig.VERSION_NAME))
     private val database = WeatherDatabase.create(context)
 
@@ -38,4 +40,6 @@ class AppContainer(context: Context) {
     val preferences = WeatherPreferences(context)
     val geocoding = GeocodingApi(http)
     val locateCurrentPlace = LocateCurrentPlace(LocationFinder(context), places)
+
+    suspend fun updateWidgets() = WeatherWidget().updateAll(context)
 }

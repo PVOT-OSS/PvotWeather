@@ -67,6 +67,7 @@ fun WeatherNavigation(container: AppContainer) {
                                         container.places,
                                         container.preferences,
                                         container.locateCurrentPlace,
+                                        container::updateWidgets,
                                     )
                                 },
                             onOpenPlaces = { backStack.add(PlacesKey) },
