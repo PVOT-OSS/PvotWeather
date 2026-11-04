@@ -98,8 +98,8 @@
     <string name="compass_nw">northwest</string>
 
     <string name="updated_at">Updated %1$s</string>
-    <string name="met_failed">MET Norway can\'t be reached right now, so this is Open-Meteo alone.</string>
-    <string name="open_meteo_failed">Open-Meteo can\'t be reached right now, so this is MET Norway alone.</string>
+    <string name="met_failed">MET Norway\'s forecast isn\'t available right now, so this is Open-Meteo alone.</string>
+    <string name="open_meteo_failed">Open-Meteo\'s forecast isn\'t available right now, so this is MET Norway alone.</string>
     <string name="attribution">Weather data by %1$s and %2$s, licensed %3$s. Combined by PvotWeather; neither source endorses this app.</string>
     <string name="attribution_open_meteo">Open-Meteo.com</string>
     <string name="attribution_met">MET Norway</string>
