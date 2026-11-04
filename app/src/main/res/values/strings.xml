@@ -305,4 +305,19 @@
 
     <string name="no_forecast_title">No forecast yet</string>
     <string name="no_forecast_message">Open-Meteo and MET Norway can\'t be reached. Check the connection and try again.</string>
+
+    <string name="backdrops">Backdrops</string>
+    <string name="backdrop_position">%1$d of %2$d</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="backdrop_clear">Clear</string>
+    <string name="backdrop_partly_cloudy">Partly cloudy</string>
+    <string name="backdrop_cloudy">Cloudy</string>
+    <string name="backdrop_light_rain">Light rain</string>
+    <string name="backdrop_heavy_rain">Heavy rain</string>
+    <string name="backdrop_thunderstorm">Thunderstorm</string>
+    <string name="backdrop_snow">Snow</string>
+    <string name="backdrop_fog">Fog</string>
+    <string name="backdrop_sunrise_sunset">Sunrise and sunset</string>
+    <string name="backdrop_night">Night</string>
 </resources>
