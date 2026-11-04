@@ -3,7 +3,7 @@
      SPDX-FileCopyrightText: 2026 Shivansh Pandey <shivanshp987@gmail.com>
      SPDX-License-Identifier: Apache-2.0
 -->
-<!-- The Prauga weather glyph: a blue cloud in front of a yellow sun, in tile units (0-108) scaled into the 72dp safe zone. -->
+<!-- The Prauga weather glyph: a blue cloud in front of a yellow sun, in tile units (0-108), scaled by 0.72 and placed so its bounding box is centred on the tile. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -12,8 +12,8 @@
     <group
         android:scaleX="0.72"
         android:scaleY="0.72"
-        android:translateX="18"
-        android:translateY="18">
+        android:translateX="12.95"
+        android:translateY="17.55">
         <path
             android:fillColor="#FFF4CE26"
             android:pathData="M54.53,31.52 C55.41,31.01,56.54,31.3,57.05,32.19 L58.91,35.39 C59.42,36.28,59.12,37.41,58.23,37.92 C57.35,38.43,56.21,38.13,55.7,37.25 L53.85,34.04 C53.33,33.15,53.64,32.03,54.53,31.52 Z M77.45,47.14 C77.72,48.14,78.73,48.72,79.72,48.45 L83.29,47.49 C84.28,47.23,84.86,46.22,84.59,45.23 C84.33,44.23,83.32,43.65,82.33,43.92 L78.76,44.88 C77.78,45.14,77.19,46.16,77.45,47.14 Z M76.46,55.46 C76.2,56.45,76.79,57.47,77.77,57.73 L81.34,58.69 C82.33,58.95,83.34,58.37,83.6,57.38 C83.87,56.39,83.28,55.38,82.3,55.12 L78.73,54.16 C77.75,53.9,76.73,54.48,76.46,55.46 Z M66.8,28.8 C67.82,28.8,68.65,29.62,68.65,30.65 V34.35 C68.65,35.37,67.82,36.2,66.8,36.2 C65.78,36.2,64.94,35.38,64.94,34.35 V30.65 C64.94,29.63,65.77,28.8,66.8,28.8 Z M79.33,34.01 C78.61,33.29,77.44,33.29,76.71,34.01 L74.09,36.63 C73.37,37.35,73.37,38.52,74.09,39.25 C74.81,39.97,75.98,39.97,76.71,39.25 L79.33,36.63 C80.06,35.9,80.06,34.73,79.33,34.01 Z" />
