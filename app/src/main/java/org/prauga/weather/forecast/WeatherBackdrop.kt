@@ -9,6 +9,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.FloatState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -21,6 +22,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import java.time.Duration
 import java.time.Instant
 import kotlin.math.abs
@@ -95,6 +99,7 @@ fun WeatherBackdrop(
     background: Color,
     dark: Boolean,
     modifier: Modifier = Modifier,
+    running: Boolean = true,
 ) {
     val first by animateColorAsState(backdrop.colors[0], tween(BLEND_MILLIS), label = "first")
     val second by animateColorAsState(backdrop.colors[1], tween(BLEND_MILLIS), label = "second")
@@ -104,7 +109,7 @@ fun WeatherBackdrop(
             tween(BLEND_MILLIS),
             label = "third",
         )
-    val seconds = rememberSkyClock()
+    val seconds = rememberSkyClock(running)
     var shown by remember { mutableStateOf(backdrop.sky) }
     var fading by remember { mutableStateOf<Sky?>(null) }
     val blend = remember { Animatable(1f) }
@@ -153,14 +158,17 @@ fun WeatherBackdrop(
 }
 
 @Composable
-private fun rememberSkyClock(): androidx.compose.runtime.FloatState {
+private fun rememberSkyClock(running: Boolean): FloatState {
     val seconds = remember { mutableFloatStateOf(0f) }
-    val animate = remember { ValueAnimator.areAnimatorsEnabled() }
+    val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    val animatorsEnabled = remember { ValueAnimator.areAnimatorsEnabled() }
+    val animate = running && animatorsEnabled && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
     LaunchedEffect(animate) {
         if (!animate) return@LaunchedEffect
+        val base = seconds.floatValue
         val start = withFrameNanos { it }
         while (true) {
-            withFrameNanos { seconds.floatValue = (it - start) / 1_000_000_000f }
+            withFrameNanos { seconds.floatValue = base + (it - start) / 1_000_000_000f }
         }
     }
     return seconds
