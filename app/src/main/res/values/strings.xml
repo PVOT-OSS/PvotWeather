@@ -117,7 +117,22 @@
     <string name="attribution_licence">CC BY 4.0</string>
 
     <string name="menu">Menu</string>
-    <string name="widget_description">Now and the next hours for your selected place</string>
+    <string name="widget_forecast">Forecast</string>
+    <string name="widget_forecast_description">Temperature, conditions, high and low</string>
+    <string name="widget_hourly">Hourly</string>
+    <string name="widget_hourly_description">Now and the next hours</string>
+    <string name="widget_daily">Hourly and 5 days</string>
+    <string name="widget_daily_description">Now, the next hours and the next 5 days</string>
+    <string name="widget_details">Details</string>
+    <string name="widget_details_description">Chance of rain, UV index, wind and humidity</string>
+    <string name="widget_sun">Sunrise and sunset</string>
+    <string name="widget_sun_description">Where the sun is between sunrise and sunset</string>
+    <string name="widget_high_low">H:%1$s  L:%2$s</string>
+    <string name="widget_rain_chance">Chance of rain</string>
+    <string name="widget_sunrise">Sunrise</string>
+    <string name="widget_sunset">Sunset</string>
+    <string name="widget_sunrise_at">Sunrise %1$s</string>
+    <string name="widget_sunset_at">Sunset %1$s</string>
     <string name="settings">Settings</string>
     <string name="about">About</string>
     <string name="compare">Compare sources</string>

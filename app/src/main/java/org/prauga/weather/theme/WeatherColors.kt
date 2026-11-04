@@ -18,6 +18,8 @@ data class WeatherColors(
     val alertRed: Color,
     val uvScale: List<Color>,
     val aqiScale: List<Color>,
+    val sun: Color,
+    val sunPath: Color,
 )
 
 object WeatherColorsDefaults {
@@ -48,5 +50,7 @@ object WeatherColorsDefaults {
                     Color(0xFF9B4FD1),
                     Color(0xFF7E2340),
                 ),
+            sun = Color(0xFFFFB300),
+            sunPath = Color(0xFF8E8E93),
         )
 }
