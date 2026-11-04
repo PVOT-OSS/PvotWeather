@@ -8,7 +8,8 @@ SPDX-License-Identifier: Apache-2.0
 _Effective 4 November 2026_
 
 Weather (package `org.prauga.weather`) is a weather app published by Saalim Quadri for PVOT-OSS.
-This policy explains what the app does with your data.
+This policy explains what the app does with your data. The [Terms of Service](TermsOfService.md) cover
+using the app.
 
 **In short: the app has no accounts, no ads, no analytics and no tracking, and it never sends your
 data to us. To get forecasts it sends the coordinates of the places you look at to two weather
