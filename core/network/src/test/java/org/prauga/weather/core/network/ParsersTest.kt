@@ -56,6 +56,31 @@ class ParsersTest {
     }
 
     @Test
+    fun metOsloHasRangesThunderAndCloudLayers() {
+        val f = MetNorwayParser.parse(Fixtures.read("met-osl"), oslo)
+        val hour = f.hours.first()
+        assertTrue(
+            hour.temperatureLow!! <= hour.temperature!! &&
+                hour.temperature!! <= hour.temperatureHigh!!
+        )
+        assertTrue(hour.windLow != null && hour.windHigh != null)
+        assertTrue(hour.thunderProbability != null && hour.precipitationMax != null)
+        assertTrue(
+            hour.cloudLow != null &&
+                hour.cloudMid != null &&
+                hour.cloudHigh != null &&
+                hour.fog != null
+        )
+        assertTrue(f.days.first().precipitationMax != null)
+    }
+
+    @Test
+    fun metOutsideTheNordicsHasNoRanges() {
+        val f = MetNorwayParser.parse(Fixtures.read("met-blr"), kolkata)
+        assertTrue(f.hours.all { it.temperatureLow == null && it.thunderProbability == null })
+    }
+
+    @Test
     fun metDropsPartlyCoveredLastDay() {
         val f = MetNorwayParser.parse(Fixtures.read("met-blr"), kolkata)
         val om = OpenMeteoParser.parse(Fixtures.read("om-blr"))

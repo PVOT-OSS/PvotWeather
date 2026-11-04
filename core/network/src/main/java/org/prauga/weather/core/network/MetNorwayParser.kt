@@ -42,6 +42,17 @@ object MetNorwayParser {
                         precipitationProbability = next?.details?.precipitationProbability,
                         condition = Conditions.fromMetSymbol(next?.summary?.symbolCode),
                         isDay = Conditions.isDayFromMetSymbol(next?.summary?.symbolCode),
+                        temperatureLow = d.temperatureP10,
+                        temperatureHigh = d.temperatureP90,
+                        windLow = d.windP10,
+                        windHigh = d.windP90,
+                        precipitationMin = next?.details?.precipitationMin,
+                        precipitationMax = next?.details?.precipitationMax,
+                        thunderProbability = next?.details?.thunderProbability,
+                        fog = d.fog,
+                        cloudLow = d.cloudLow,
+                        cloudMid = d.cloudMid,
+                        cloudHigh = d.cloudHigh,
                     )
                 }
         return ProviderForecast(Provider.MET_NORWAY, hours.firstOrNull(), hours, days(steps, zone))
@@ -72,6 +83,14 @@ object MetNorwayParser {
                 it.data.next1?.details?.precipitationAmount
                     ?: it.data.next6?.details?.precipitationAmount
             }
+        val minimums =
+            steps.mapNotNull {
+                it.data.next1?.details?.precipitationMin ?: it.data.next6?.details?.precipitationMin
+            }
+        val maximums =
+            steps.mapNotNull {
+                it.data.next1?.details?.precipitationMax ?: it.data.next6?.details?.precipitationMax
+            }
         val probabilities =
             steps.mapNotNull {
                 it.data.next1?.details?.precipitationProbability
@@ -90,6 +109,9 @@ object MetNorwayParser {
             precipitationSum = if (amounts.isEmpty()) null else amounts.sum(),
             precipitationProbability = probabilities.maxOrNull(),
             condition = condition,
+            precipitationMin =
+                minimums.takeIf { it.size == amounts.size && it.isNotEmpty() }?.sum(),
+            precipitationMax = maximums.takeIf { it.size == amounts.size && it.isNotEmpty() }?.sum(),
         )
     }
 
@@ -132,6 +154,14 @@ internal data class MetInstantDetails(
     @SerialName("wind_from_direction") val windDirection: Double? = null,
     @SerialName("wind_speed_of_gust") val windGust: Double? = null,
     @SerialName("ultraviolet_index_clear_sky") val uvClearSky: Double? = null,
+    @SerialName("air_temperature_percentile_10") val temperatureP10: Double? = null,
+    @SerialName("air_temperature_percentile_90") val temperatureP90: Double? = null,
+    @SerialName("wind_speed_percentile_10") val windP10: Double? = null,
+    @SerialName("wind_speed_percentile_90") val windP90: Double? = null,
+    @SerialName("fog_area_fraction") val fog: Double? = null,
+    @SerialName("cloud_area_fraction_low") val cloudLow: Double? = null,
+    @SerialName("cloud_area_fraction_medium") val cloudMid: Double? = null,
+    @SerialName("cloud_area_fraction_high") val cloudHigh: Double? = null,
 )
 
 @Serializable
@@ -147,6 +177,9 @@ internal data class MetSummary(@SerialName("symbol_code") val symbolCode: String
 internal data class MetPeriodDetails(
     @SerialName("precipitation_amount") val precipitationAmount: Double? = null,
     @SerialName("probability_of_precipitation") val precipitationProbability: Double? = null,
+    @SerialName("precipitation_amount_min") val precipitationMin: Double? = null,
+    @SerialName("precipitation_amount_max") val precipitationMax: Double? = null,
+    @SerialName("probability_of_thunder") val thunderProbability: Double? = null,
     @SerialName("air_temperature_max") val airTemperatureMax: Double? = null,
     @SerialName("air_temperature_min") val airTemperatureMin: Double? = null,
 )

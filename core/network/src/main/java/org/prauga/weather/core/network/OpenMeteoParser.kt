@@ -38,6 +38,11 @@ object OpenMeteoParser {
                     precipitationProbability = hourly.precipitationProbability.at(i),
                     condition = Conditions.fromWmo(hourly.weatherCode.at(i)?.toInt()),
                     isDay = hourly.isDay.at(i)?.let { it > 0 },
+                    cloudLow = hourly.cloudLow.at(i),
+                    cloudMid = hourly.cloudMid.at(i),
+                    cloudHigh = hourly.cloudHigh.at(i),
+                    snowfall = hourly.snowfall.at(i),
+                    snowDepth = hourly.snowDepth.at(i),
                 )
             } ?: emptyList()
         val daily = response.daily
@@ -51,6 +56,9 @@ object OpenMeteoParser {
                     precipitationProbability = daily.precipitationProbabilityMax.at(i),
                     condition = Conditions.fromWmo(daily.weatherCode.at(i)?.toInt()),
                     uvIndexMax = daily.uvIndexMax.at(i),
+                    snowfallSum = daily.snowfallSum.at(i),
+                    sunshineSeconds = daily.sunshine.at(i),
+                    daylightSeconds = daily.daylight.at(i),
                     sunrise = daily.sunrise.at(i)?.let { Instant.ofEpochSecond(it.toLong()) },
                     sunset = daily.sunset.at(i)?.let { Instant.ofEpochSecond(it.toLong()) },
                 )
@@ -71,6 +79,11 @@ object OpenMeteoParser {
                     windGust = c.windGust,
                     uvIndex = hour?.uvIndex,
                     visibility = hour?.visibility,
+                    cloudLow = hour?.cloudLow,
+                    cloudMid = hour?.cloudMid,
+                    cloudHigh = hour?.cloudHigh,
+                    snowfall = hour?.snowfall,
+                    snowDepth = hour?.snowDepth,
                     precipitation = c.precipitation,
                     precipitationProbability = hour?.precipitationProbability,
                     condition = Conditions.fromWmo(c.weatherCode),
@@ -141,6 +154,11 @@ internal data class OmHourly(
     @SerialName("wind_gusts_10m") val windGust: List<Double?> = emptyList(),
     @SerialName("uv_index") val uvIndex: List<Double?> = emptyList(),
     @SerialName("is_day") val isDay: List<Double?> = emptyList(),
+    @SerialName("cloud_cover_low") val cloudLow: List<Double?> = emptyList(),
+    @SerialName("cloud_cover_mid") val cloudMid: List<Double?> = emptyList(),
+    @SerialName("cloud_cover_high") val cloudHigh: List<Double?> = emptyList(),
+    val snowfall: List<Double?> = emptyList(),
+    @SerialName("snow_depth") val snowDepth: List<Double?> = emptyList(),
 )
 
 @Serializable
@@ -152,6 +170,9 @@ internal data class OmDaily(
     val sunrise: List<Double?> = emptyList(),
     val sunset: List<Double?> = emptyList(),
     @SerialName("uv_index_max") val uvIndexMax: List<Double?> = emptyList(),
+    @SerialName("snowfall_sum") val snowfallSum: List<Double?> = emptyList(),
+    @SerialName("sunshine_duration") val sunshine: List<Double?> = emptyList(),
+    @SerialName("daylight_duration") val daylight: List<Double?> = emptyList(),
     @SerialName("precipitation_sum") val precipitationSum: List<Double?> = emptyList(),
     @SerialName("precipitation_probability_max")
     val precipitationProbabilityMax: List<Double?> = emptyList(),

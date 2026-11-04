@@ -190,6 +190,39 @@ class ForecastMergerTest {
     }
 
     @Test
+    fun yesterdayIsKeptApartAndRangesComeFromMet() {
+        val yesterday = LocalDate.of(2026, 11, 3)
+        val f =
+            merger.merge(
+                place,
+                om(
+                    ProviderHour(h8, temperature = 28.0, snowDepth = 0.0, cloudLow = 40.0),
+                    days =
+                        listOf(
+                            ProviderDay(yesterday, temperatureMax = 27.0, sunshineSeconds = 3600.0)
+                        ),
+                ),
+                met(
+                    ProviderHour(
+                        h8,
+                        temperature = 26.0,
+                        temperatureLow = 24.0,
+                        temperatureHigh = 29.0,
+                        cloudLow = 20.0,
+                    )
+                ),
+                now,
+                openMeteoModel = "ecmwf_ifs025",
+            )!!
+        assertEquals(yesterday, f.yesterday!!.date)
+        assertTrue(f.days.isEmpty())
+        val hour = f.hours.single()
+        assertEquals(24.0, hour.temperatureLow!!, 1e-9)
+        assertEquals(30.0, hour.cloudLow!!.value, 1e-9)
+        assertEquals("ecmwf_ifs025", f.openMeteoModel)
+    }
+
+    @Test
     fun daysMergeAndStartToday() {
         val yesterday = LocalDate.of(2026, 11, 3)
         val today = LocalDate.of(2026, 11, 4)
