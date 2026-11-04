@@ -123,6 +123,13 @@ class ForecastRepositoryTest {
         assertEquals(RefreshResult.Updated, repository.refresh(oslo)[Provider.MET_NORWAY])
     }
 
+    @Test
+    fun backgroundRefreshCanSkipMet() = runTest {
+        val result = repository.refresh(place, providers = setOf(Provider.OPEN_METEO))
+        assertEquals(RefreshResult.NotDue, result[Provider.MET_NORWAY])
+        assertEquals(listOf("api.open-meteo.com"), calls)
+    }
+
     private class FakeDao : ForecastCacheDao {
         val rows = linkedMapOf<Pair<String, String>, CachedForecast>()
         private val flow = MutableStateFlow(0)

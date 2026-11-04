@@ -75,16 +75,21 @@ class ForecastRepository(
             }
             .flowOn(Dispatchers.Default)
 
-    suspend fun refresh(place: Place, force: Boolean = false): Map<Provider, RefreshResult> =
-        coroutineScope {
-            val om = async {
-                guarded(place.key to Provider.OPEN_METEO) { refreshOpenMeteo(place, force) }
-            }
-            val met = async {
-                guarded(place.key to Provider.MET_NORWAY) { refreshMetNorway(place) }
-            }
-            mapOf(Provider.OPEN_METEO to om.await(), Provider.MET_NORWAY to met.await())
+    suspend fun refresh(
+        place: Place,
+        force: Boolean = false,
+        providers: Set<Provider> = Provider.entries.toSet(),
+    ): Map<Provider, RefreshResult> = coroutineScope {
+        val om = async {
+            if (Provider.OPEN_METEO !in providers) RefreshResult.NotDue
+            else guarded(place.key to Provider.OPEN_METEO) { refreshOpenMeteo(place, force) }
         }
+        val met = async {
+            if (Provider.MET_NORWAY !in providers) RefreshResult.NotDue
+            else guarded(place.key to Provider.MET_NORWAY) { refreshMetNorway(place) }
+        }
+        mapOf(Provider.OPEN_METEO to om.await(), Provider.MET_NORWAY to met.await())
+    }
 
     private suspend fun refreshOpenMeteo(place: Place, force: Boolean): RefreshResult {
         val now = clock.instant()
