@@ -13,11 +13,15 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import org.prauga.weather.R
 import org.prauga.weather.core.model.Condition
+import org.prauga.weather.core.model.TemperatureUnit
+import org.prauga.weather.core.model.WindUnit
 
 object Formats {
-    fun degrees(value: Double): Int = value.roundToInt()
+    fun degrees(celsius: Double, unit: TemperatureUnit = TemperatureUnit.CELSIUS): Int =
+        unit.fromCelsius(celsius).roundToInt()
 
-    fun kmh(metresPerSecond: Double): Int = (metresPerSecond * 3.6).roundToInt()
+    fun wind(metresPerSecond: Double, unit: WindUnit = WindUnit.KILOMETRES_PER_HOUR): Int =
+        unit.fromMetresPerSecond(metresPerSecond).roundToInt()
 
     fun km(metres: Double): String =
         if (metres >= 10_000) (metres / 1000).roundToInt().toString()
