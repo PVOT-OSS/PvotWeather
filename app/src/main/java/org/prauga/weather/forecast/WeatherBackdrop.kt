@@ -84,6 +84,8 @@ enum class Backdrop(val colors: List<Color>, val sky: Sky) {
 }
 
 private val SkyLight = Color.White
+private val SkySun = Color(0xFFFFE9A8)
+private val SkyShade = Color(0xFF1C2129)
 private val SkyInkLight = Color(0xFF6F93B5)
 private const val BLEND_MILLIS = 800
 
@@ -116,7 +118,15 @@ fun WeatherBackdrop(
     }
     val path = remember { Path() }
     val alpha = if (dark) 0.8f else 1f
-    val ink = if (dark) SkyLight else SkyInkLight
+    val colors =
+        remember(dark) {
+            SkyColors(
+                light = SkyLight,
+                sun = SkySun,
+                shade = SkyShade,
+                ink = if (dark) SkyLight else SkyInkLight,
+            )
+        }
     Canvas(modifier) {
         val t = seconds.floatValue
         val w = size.width
@@ -136,8 +146,8 @@ fun WeatherBackdrop(
         blob(third, 0.15f, 0.55f, 0.8f, 0.7f, 0f)
         blob(second, 0.85f, 0.2f, 0.85f, 0.85f, 2.1f)
         blob(first, 0.35f, 0.25f, 0.9f, 1f, 4.2f)
-        fading?.let { drawSky(it, t, alpha * (1f - blend.value), SkyLight, ink, path) }
-        drawSky(shown, t, alpha * blend.value, SkyLight, ink, path)
+        fading?.let { drawSky(it, t, alpha * (1f - blend.value), colors, path) }
+        drawSky(shown, t, alpha * blend.value, colors, path)
         drawRect(Brush.verticalGradient(0.55f to Color.Transparent, 1f to background))
     }
 }
