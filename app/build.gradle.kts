@@ -12,8 +12,8 @@ android {
 
     defaultConfig {
         applicationId = "org.prauga.weather"
-        versionCode = 10000
-        versionName = "1.0.0"
+        versionCode = rootProject.extra["versionCode"] as Int
+        versionName = rootProject.extra["versionName"] as String
     }
 
     buildFeatures { buildConfig = true }
