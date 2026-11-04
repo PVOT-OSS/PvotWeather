@@ -38,7 +38,7 @@ SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
-path = "fastlane/metadata/android/**/phoneScreenshots/*.png"
+path = "fastlane/metadata/android/**/*Screenshots/*.png"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
 SPDX-License-Identifier = "Apache-2.0"
