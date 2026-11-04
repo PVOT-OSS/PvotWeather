@@ -17,3 +17,15 @@ path = "gradle/wrapper/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2007-2023 Gradle, Inc."
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "core/network/src/test/resources/fixtures/om-*.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Open-Meteo.com"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = "core/network/src/test/resources/fixtures/met-*.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "The Norwegian Meteorological Institute (MET Norway)"
+SPDX-License-Identifier = "CC-BY-4.0"
