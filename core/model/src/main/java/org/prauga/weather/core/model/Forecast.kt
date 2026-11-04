@@ -67,4 +67,5 @@ data class Forecast(
     val hours: List<HourPoint>,
     val days: List<DayPoint>,
     val providers: Set<Provider>,
+    val minutely: List<PrecipitationStep> = emptyList(),
 )

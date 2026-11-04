@@ -64,7 +64,7 @@ class ForecastMerger {
             if (openMeteo != null) add(Provider.OPEN_METEO)
             if (metNorway != null) add(Provider.MET_NORWAY)
         }
-        return Forecast(place, current, hours, days, providers)
+        return Forecast(place, current, hours, days, providers, openMeteo?.minutely.orEmpty())
     }
 
     internal fun mergeHour(time: Instant, om: ProviderHour?, met: ProviderHour?) =
