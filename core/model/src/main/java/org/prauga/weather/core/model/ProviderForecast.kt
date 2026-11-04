@@ -23,6 +23,19 @@ data class ProviderHour(
     val precipitationProbability: Double? = null,
     val condition: Condition? = null,
     val isDay: Boolean? = null,
+    val temperatureLow: Double? = null,
+    val temperatureHigh: Double? = null,
+    val windLow: Double? = null,
+    val windHigh: Double? = null,
+    val precipitationMin: Double? = null,
+    val precipitationMax: Double? = null,
+    val thunderProbability: Double? = null,
+    val fog: Double? = null,
+    val cloudLow: Double? = null,
+    val cloudMid: Double? = null,
+    val cloudHigh: Double? = null,
+    val snowfall: Double? = null,
+    val snowDepth: Double? = null,
 )
 
 data class ProviderDay(
@@ -35,6 +48,11 @@ data class ProviderDay(
     val uvIndexMax: Double? = null,
     val sunrise: Instant? = null,
     val sunset: Instant? = null,
+    val precipitationMin: Double? = null,
+    val precipitationMax: Double? = null,
+    val snowfallSum: Double? = null,
+    val sunshineSeconds: Double? = null,
+    val daylightSeconds: Double? = null,
 )
 
 data class ProviderForecast(

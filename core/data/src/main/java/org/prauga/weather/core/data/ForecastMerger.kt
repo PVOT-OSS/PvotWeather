@@ -28,6 +28,7 @@ class ForecastMerger {
         openMeteo: ProviderForecast?,
         metNorway: ProviderForecast?,
         now: Instant,
+        openMeteoModel: String? = null,
     ): Forecast? {
         if (openMeteo == null && metNorway == null) return null
         val met = MetTimeline(metNorway?.hours.orEmpty())
@@ -64,7 +65,21 @@ class ForecastMerger {
             if (openMeteo != null) add(Provider.OPEN_METEO)
             if (metNorway != null) add(Provider.MET_NORWAY)
         }
-        return Forecast(place, current, hours, days, providers, openMeteo?.minutely.orEmpty())
+        val yesterday =
+            today.minusDays(1).let { d ->
+                if (omDays[d] != null || metDays[d] != null) mergeDay(omDays[d], metDays[d])
+                else null
+            }
+        return Forecast(
+            place,
+            current,
+            hours,
+            days,
+            providers,
+            openMeteo?.minutely.orEmpty(),
+            yesterday,
+            openMeteoModel,
+        )
     }
 
     internal fun mergeHour(time: Instant, om: ProviderHour?, met: ProviderHour?) =
@@ -87,6 +102,19 @@ class ForecastMerger {
                 mean(om?.precipitationProbability, met?.precipitationProbability),
             condition = condition(om?.condition, met?.condition),
             isDay = om?.isDay ?: met?.isDay,
+            temperatureLow = met?.temperatureLow,
+            temperatureHigh = met?.temperatureHigh,
+            windLow = met?.windLow,
+            windHigh = met?.windHigh,
+            precipitationMin = met?.precipitationMin,
+            precipitationMax = met?.precipitationMax,
+            thunderProbability = mean(null, met?.thunderProbability),
+            fog = mean(null, met?.fog),
+            cloudLow = mean(om?.cloudLow, met?.cloudLow),
+            cloudMid = mean(om?.cloudMid, met?.cloudMid),
+            cloudHigh = mean(om?.cloudHigh, met?.cloudHigh),
+            snowfall = mean(om?.snowfall, null),
+            snowDepth = mean(om?.snowDepth, null),
         )
 
     internal fun mergeDay(om: ProviderDay?, met: ProviderDay?): DayPoint {
@@ -102,6 +130,11 @@ class ForecastMerger {
             uvIndexMax = prefer(om?.uvIndexMax, met?.uvIndexMax),
             sunrise = om?.sunrise ?: met?.sunrise,
             sunset = om?.sunset ?: met?.sunset,
+            precipitationMin = met?.precipitationMin,
+            precipitationMax = met?.precipitationMax,
+            snowfallSum = mean(om?.snowfallSum, null),
+            sunshineSeconds = om?.sunshineSeconds,
+            daylightSeconds = om?.daylightSeconds,
         )
     }
 
@@ -129,6 +162,14 @@ class ForecastMerger {
                 windGust = lerp(before.windGust, after.windGust),
                 windDirection = if (f < 0.5) before.windDirection else after.windDirection,
                 uvIndex = lerp(before.uvIndex, after.uvIndex),
+                temperatureLow = lerp(before.temperatureLow, after.temperatureLow),
+                temperatureHigh = lerp(before.temperatureHigh, after.temperatureHigh),
+                windLow = lerp(before.windLow, after.windLow),
+                windHigh = lerp(before.windHigh, after.windHigh),
+                fog = lerp(before.fog, after.fog),
+                cloudLow = lerp(before.cloudLow, after.cloudLow),
+                cloudMid = lerp(before.cloudMid, after.cloudMid),
+                cloudHigh = lerp(before.cloudHigh, after.cloudHigh),
             )
         }
     }

@@ -47,6 +47,19 @@ data class HourPoint(
     val precipitationProbability: Sourced?,
     val condition: SourcedCondition?,
     val isDay: Boolean?,
+    val temperatureLow: Double? = null,
+    val temperatureHigh: Double? = null,
+    val windLow: Double? = null,
+    val windHigh: Double? = null,
+    val precipitationMin: Double? = null,
+    val precipitationMax: Double? = null,
+    val thunderProbability: Sourced? = null,
+    val fog: Sourced? = null,
+    val cloudLow: Sourced? = null,
+    val cloudMid: Sourced? = null,
+    val cloudHigh: Sourced? = null,
+    val snowfall: Sourced? = null,
+    val snowDepth: Sourced? = null,
 )
 
 data class DayPoint(
@@ -59,6 +72,11 @@ data class DayPoint(
     val uvIndexMax: Sourced?,
     val sunrise: Instant?,
     val sunset: Instant?,
+    val precipitationMin: Double? = null,
+    val precipitationMax: Double? = null,
+    val snowfallSum: Sourced? = null,
+    val sunshineSeconds: Double? = null,
+    val daylightSeconds: Double? = null,
 )
 
 data class Forecast(
@@ -68,4 +86,6 @@ data class Forecast(
     val days: List<DayPoint>,
     val providers: Set<Provider>,
     val minutely: List<PrecipitationStep> = emptyList(),
+    val yesterday: DayPoint? = null,
+    val openMeteoModel: String? = null,
 )
