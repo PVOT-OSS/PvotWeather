@@ -1,1 +1,1 @@
-First release: forecasts combined from Open-Meteo and MET Norway, places and location, rain timing, MET Norway warnings, the usual high, air quality and a side-by-side comparison of the two sources.
+First release: forecasts combined from Open-Meteo and MET Norway with their uncertainty, places and location, rain timing, warnings, the usual high, air quality and pollen, the moon, sea and river flow, five home screen widgets and a side-by-side comparison of the two sources.
