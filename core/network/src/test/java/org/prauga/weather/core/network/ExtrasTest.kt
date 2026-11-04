@@ -55,4 +55,12 @@ class ExtrasTest {
         assertEquals(2, steps.size)
         assertEquals(2.0, steps[1].rate, 1e-9)
     }
+
+    @Test
+    fun airQuality() {
+        val air = AirQualityApi.parse(Fixtures.read("om-air-blr"))!!
+        assertEquals(84, air.usAqi)
+        assertEquals(21.4, air.pm25!!, 1e-9)
+        assertNull(AirQualityApi.parse("""{"current":{"time":1,"us_aqi":null}}"""))
+    }
 }

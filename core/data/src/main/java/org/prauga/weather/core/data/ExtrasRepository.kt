@@ -18,10 +18,12 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.prauga.weather.core.data.cache.CachedForecast
 import org.prauga.weather.core.data.cache.ForecastCacheDao
+import org.prauga.weather.core.model.AirQuality
 import org.prauga.weather.core.model.Alert
 import org.prauga.weather.core.model.DailyHigh
 import org.prauga.weather.core.model.Nowcast
 import org.prauga.weather.core.model.Place
+import org.prauga.weather.core.network.AirQualityApi
 import org.prauga.weather.core.network.ArchiveApi
 import org.prauga.weather.core.network.Fetch
 import org.prauga.weather.core.network.MetExtrasParser
@@ -31,12 +33,14 @@ data class Extras(
     val nowcast: Nowcast? = null,
     val alerts: List<Alert> = emptyList(),
     val usualHigh: Double? = null,
+    val airQuality: AirQuality? = null,
 )
 
 class ExtrasRepository(
     private val cache: ForecastCacheDao,
     private val metNorway: MetNorwayApi,
     private val archive: ArchiveApi,
+    private val air: AirQualityApi,
     private val language: () -> String,
     private val clock: Clock = Clock.systemUTC(),
 ) {
@@ -63,6 +67,11 @@ class ExtrasRepository(
                         rows.body(ARCHIVE)?.let {
                             usualHigh(decodeHighs(it), now.atZone(place.zone).toLocalDate())
                         },
+                    airQuality =
+                        rows
+                            .body(AIR)
+                            ?.let { runCatching { AirQualityApi.parse(it) }.getOrNull() }
+                            ?.takeIf { Duration.between(it.time, now) < AIR_MAX_AGE },
                 )
             }
             .flowOn(Dispatchers.Default)
@@ -88,6 +97,7 @@ class ExtrasRepository(
                 )
             }
             add(async { guarded(place, ARCHIVE) { refreshArchive(place) } })
+            add(async { guarded(place, AIR) { refreshAir(place) } })
         }
         jobs.forEach { it.await() }
     }
@@ -137,6 +147,18 @@ class ExtrasRepository(
         )
     }
 
+    private suspend fun refreshAir(place: Place) {
+        val now = clock.instant()
+        val row = cache.get(place.key, AIR)
+        if (
+            row != null && Duration.between(Instant.ofEpochMilli(row.fetchedAt), now) < AIR_INTERVAL
+        )
+            return
+        val body = air.current(place)
+        AirQualityApi.parse(body) ?: return
+        cache.upsert(CachedForecast(place.key, AIR, body, now.toEpochMilli(), null, null))
+    }
+
     private suspend fun guarded(place: Place, product: String, block: suspend () -> Unit) {
         val key = place.key to product
         retryAt[key]?.let { if (clock.instant().isBefore(it)) return }
@@ -160,6 +182,9 @@ class ExtrasRepository(
         const val NOWCAST = "MET_NOWCAST"
         const val ALERTS = "MET_ALERTS"
         const val ARCHIVE = "OPEN_METEO_ARCHIVE"
+        const val AIR = "OPEN_METEO_AIR"
+        private val AIR_INTERVAL: Duration = Duration.ofMinutes(60)
+        private val AIR_MAX_AGE: Duration = Duration.ofHours(3)
         private const val YEARS = 10
         private val ARCHIVE_VALIDITY: Duration = Duration.ofDays(3)
         private val RETRY: Duration = Duration.ofMinutes(10)

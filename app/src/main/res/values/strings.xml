@@ -39,6 +39,17 @@
     <string name="alert_until">Until %1$s</string>
     <string name="alert_source">Warning from MET Norway</string>
     <string name="average">Average</string>
+    <string name="air_quality">Air quality</string>
+    <string name="air_pm25">PM2.5 %1$d µg/m³</string>
+    <string name="air_source">US AQI, CAMS via Open-Meteo</string>
+    <string name="aqi_good">Good</string>
+    <string name="aqi_moderate">Moderate</string>
+    <string name="aqi_sensitive">Unhealthy for sensitive groups</string>
+    <string name="aqi_unhealthy">Unhealthy</string>
+    <string name="aqi_very_unhealthy">Very unhealthy</string>
+    <string name="aqi_hazardous">Hazardous</string>
+    <string name="about_cams">CAMS (Copernicus)</string>
+    <string name="about_cams_summary">Air quality. Contains modified Copernicus Atmosphere Monitoring Service information.</string>
     <string name="average_above">Above the usual high for this time of year</string>
     <string name="average_below">Below the usual high for this time of year</string>
     <string name="average_close">Close to the usual high for this time of year</string>

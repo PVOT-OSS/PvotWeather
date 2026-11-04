@@ -28,3 +28,5 @@ data class Alert(
 )
 
 data class DailyHigh(val date: LocalDate, val temperatureMax: Double)
+
+data class AirQuality(val time: Instant, val usAqi: Int, val pm25: Double?, val pm10: Double?)

@@ -91,8 +91,10 @@ import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.button.PvotIconButtonDefaults
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.math.roundToInt
 import org.prauga.weather.R
 import org.prauga.weather.core.data.Extras
+import org.prauga.weather.core.model.AirQuality
 import org.prauga.weather.core.model.Alert
 import org.prauga.weather.core.model.AlertLevel
 import org.prauga.weather.core.model.DayPoint
@@ -317,7 +319,7 @@ private fun ForecastContent(
         if (state.extras.alerts.isNotEmpty())
             item { AlertsCard(state.extras.alerts, forecast.place.zone) }
         item { DaysCard(forecast) }
-        item { Tiles(forecast, state.extras.usualHigh) }
+        item { Tiles(forecast, state.extras) }
         item { Footer(state) }
     }
 }
@@ -594,7 +596,8 @@ private fun Sparkline(values: List<Double>, modifier: Modifier) {
 }
 
 @Composable
-private fun Tiles(forecast: Forecast, usualHigh: Double?) {
+private fun Tiles(forecast: Forecast, extras: Extras) {
+    val usualHigh = extras.usualHigh
     val current = forecast.current ?: return
     val today = forecast.days.firstOrNull()
     val zone = forecast.place.zone
@@ -639,6 +642,7 @@ private fun Tiles(forecast: Forecast, usualHigh: Double?) {
                     }
                 }
             }
+            extras.airQuality?.let { air -> add { m -> AirQualityTile(air, m) } }
             current.visibility?.let { v ->
                 add { m ->
                     Tile(
@@ -747,6 +751,49 @@ private fun AverageTile(todayHigh: Double, usualHigh: Double, modifier: Modifier
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun AirQualityTile(air: AirQuality, modifier: Modifier) {
+    Tile(
+        stringResource(R.string.air_quality),
+        air.usAqi.toString(),
+        air.pm25?.let { stringResource(R.string.air_pm25, it.roundToInt()) } ?: "",
+        modifier,
+        source = stringResource(R.string.air_source),
+    ) {
+        Text(
+            stringResource(Formats.aqiLevel(air.usAqi)),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        AqiBar(air.usAqi, Modifier.fillMaxWidth().height(6.dp))
+    }
+}
+
+@Composable
+private fun AqiBar(aqi: Int, modifier: Modifier) {
+    val marker = MaterialTheme.colorScheme.onSurface
+    Canvas(modifier) {
+        val h = size.height
+        drawLine(
+            Brush.horizontalGradient(
+                listOf(
+                    Color(0xFF3DBE5C),
+                    Color(0xFFF2D43D),
+                    Color(0xFFF28A2E),
+                    Color(0xFFE5483B),
+                    Color(0xFF9B4FD1),
+                    Color(0xFF7E2340),
+                )
+            ),
+            Offset(h / 2, h / 2),
+            Offset(size.width - h / 2, h / 2),
+            strokeWidth = h,
+            cap = StrokeCap.Round,
+        )
+        val x = h / 2 + (size.width - h) * (aqi / 300f).coerceIn(0f, 1f)
+        drawCircle(marker, h * 0.9f, Offset(x, h / 2))
     }
 }
 
