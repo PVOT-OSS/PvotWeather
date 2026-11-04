@@ -5,10 +5,7 @@ package org.prauga.weather.about
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,12 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotListRow
-import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import org.prauga.weather.BuildConfig
 import org.prauga.weather.R
+import org.prauga.weather.SubScreen
 import org.prauga.weather.core.network.WeatherHttp
 
 private data class Link(val title: Int, val summary: Int, val url: String)
@@ -60,44 +56,31 @@ private val app =
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     val uriHandler = LocalUriHandler.current
-    PvotScreenScaffold(topBar = { PvotTopBar(stringResource(R.string.about), onBack = onBack) }) {
-        padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding =
-                PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = 32.dp,
-                ),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            item {
-                Column(Modifier.padding(horizontal = 4.dp)) {
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            item { Links(stringResource(R.string.about_data), sources) { uriHandler.openUri(it) } }
-            item {
+    SubScreen(stringResource(R.string.about), onBack, Arrangement.spacedBy(20.dp)) {
+        item {
+            Column(Modifier.padding(horizontal = 4.dp)) {
                 Text(
-                    stringResource(R.string.about_disclaimer),
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            item { Links(stringResource(R.string.about_app), app) { uriHandler.openUri(it) } }
         }
+        item { Links(stringResource(R.string.about_data), sources) { uriHandler.openUri(it) } }
+        item {
+            Text(
+                stringResource(R.string.about_disclaimer),
+                modifier = Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item { Links(stringResource(R.string.about_app), app) { uriHandler.openUri(it) } }
     }
 }
 
