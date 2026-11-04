@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 plugins {
-    alias(libs.plugins.pvot.android.library)
+    alias(libs.plugins.weather.android.library)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
 }

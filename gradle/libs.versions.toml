@@ -17,6 +17,7 @@ coroutines = "1.11.0"
 ktor = "3.0.3"
 kotlinxSerialization = "1.7.3"
 navigation3 = "1.2.0"
+pvot = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -48,16 +49,18 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
 androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleRuntimeKtx" }
-pvot-core-ui = { group = "com.prauga.pvot", name = "core-ui" }
-pvot-design-system = { group = "com.prauga.pvot", name = "design-system" }
+pvot-core-ui = { group = "com.prauga.pvot", name = "core-ui", version.ref = "pvot" }
+pvot-design-system = { group = "com.prauga.pvot", name = "design-system", version.ref = "pvot" }
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-pvot-android-application = { id = "pvot.android.application" }
-pvot-android-compose = { id = "pvot.android.compose" }
-pvot-android-library = { id = "pvot.android.library" }
+weather-android-application = { id = "weather.android.application" }
+weather-android-compose = { id = "weather.android.compose" }
+weather-android-library = { id = "weather.android.library" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
