@@ -15,6 +15,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
+import org.prauga.weather.about.AboutScreen
 import org.prauga.weather.core.model.TemperatureUnit
 import org.prauga.weather.core.model.WindUnit
 import org.prauga.weather.forecast.ForecastRoute
@@ -31,6 +32,8 @@ import org.prauga.weather.settings.Units
 @Serializable data object PlacesKey : NavKey
 
 @Serializable data object SettingsKey : NavKey
+
+@Serializable data object AboutKey : NavKey
 
 @Composable
 fun WeatherNavigation(container: AppContainer) {
@@ -63,7 +66,10 @@ fun WeatherNavigation(container: AppContainer) {
                                 },
                             onOpenPlaces = { backStack.add(PlacesKey) },
                             menu =
-                                listOf(MenuItem(R.string.settings) { backStack.add(SettingsKey) }),
+                                listOf(
+                                    MenuItem(R.string.settings) { backStack.add(SettingsKey) },
+                                    MenuItem(R.string.about) { backStack.add(AboutKey) },
+                                ),
                         )
                     }
                     entry<PlacesKey> {
@@ -80,6 +86,7 @@ fun WeatherNavigation(container: AppContainer) {
                             onBack = { backStack.removeLastOrNull() },
                         )
                     }
+                    entry<AboutKey> { AboutScreen(onBack = { backStack.removeLastOrNull() }) }
                     entry<SettingsKey> {
                         SettingsScreen(
                             container.preferences,
