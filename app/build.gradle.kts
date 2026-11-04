@@ -16,6 +16,7 @@ android {
     }
 
     buildTypes {
+        debug { applicationIdSuffix = ".dev" }
         release {
             optimization {
                 enable = true
