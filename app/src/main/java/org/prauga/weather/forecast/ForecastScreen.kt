@@ -120,7 +120,7 @@ data class MenuItem(@StringRes val label: Int, val onClick: () -> Unit)
 @Composable
 fun ForecastRoute(
     viewModel: ForecastViewModel,
-    onOpenPlaces: () -> Unit,
+    onOpenPlaces: (() -> Unit)?,
     menu: List<MenuItem> = emptyList(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -134,7 +134,7 @@ fun ForecastRoute(
         state,
         onRefresh = { viewModel.refresh(force = true) },
         onOpenPlaces = onOpenPlaces,
-        menu = listOf(MenuItem(R.string.places, onOpenPlaces)) + menu,
+        menu = listOfNotNull(onOpenPlaces?.let { MenuItem(R.string.places, it) }) + menu,
     )
 }
 
@@ -143,7 +143,7 @@ fun ForecastRoute(
 fun ForecastScreen(
     state: ForecastUiState,
     onRefresh: () -> Unit,
-    onOpenPlaces: () -> Unit,
+    onOpenPlaces: (() -> Unit)?,
     menu: List<MenuItem>,
 ) {
     val background = MaterialTheme.colorScheme.background
@@ -191,7 +191,8 @@ fun ForecastScreen(
                         Status(header) {
                             PvotEmptyContent(
                                 message = stringResource(R.string.no_places),
-                                actionLabel = stringResource(R.string.add_place),
+                                actionLabel =
+                                    onOpenPlaces?.let { stringResource(R.string.add_place) },
                                 onAction = onOpenPlaces,
                             )
                         }
@@ -231,13 +232,22 @@ private fun Status(header: @Composable () -> Unit, content: @Composable () -> Un
 }
 
 @Composable
-private fun PlaceHeader(place: Place?, onOpenPlaces: () -> Unit, menu: List<MenuItem>) {
+private fun PlaceHeader(place: Place?, onOpenPlaces: (() -> Unit)?, menu: List<MenuItem>) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Row(
             Modifier.weight(1f)
                 .clip(MaterialTheme.shapes.small)
-                .clickable(onClickLabel = stringResource(R.string.places), onClick = onOpenPlaces)
+                .then(
+                    if (onOpenPlaces != null) {
+                        Modifier.clickable(
+                            onClickLabel = stringResource(R.string.places),
+                            onClick = onOpenPlaces,
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
