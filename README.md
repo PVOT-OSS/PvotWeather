@@ -38,6 +38,8 @@ Forecasts from Open-Meteo and MET Norway, combined. No ads, no tracking.
 <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/PVOT-OSS/PvotWeather"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/b1c8ac6f2ab08497189721a788a5763e28ff64cd/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="80"></a>
 <a href="https://github.com/PVOT-OSS/PvotWeather/releases"><img src="https://user-images.githubusercontent.com/69304392/148696068-0cfea65d-b18f-4685-82b5-329a330b1c0d.png" alt="Get it on GitHub" height="80"></a>
 
+[![Exodus Privacy](https://img.shields.io/badge/Exodus-0%20trackers-brightgreen)](https://reports.exodus-privacy.eu.org/en/reports/org.prauga.weather/latest/)
+
 Requires Android 8.1 or newer.
 
 ## Privacy
