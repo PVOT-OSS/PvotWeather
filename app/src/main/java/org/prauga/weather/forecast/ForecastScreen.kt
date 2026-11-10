@@ -8,6 +8,7 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import android.text.format.DateFormat
 import androidx.activity.compose.LocalActivity
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
@@ -108,8 +109,6 @@ import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.button.PvotIconButtonDefaults
 import java.time.Instant
 import java.time.ZoneId
-import kotlin.math.abs
-import kotlin.math.roundToInt
 import org.prauga.weather.R
 import org.prauga.weather.core.data.Extras
 import org.prauga.weather.core.model.AirQuality
@@ -785,42 +784,34 @@ private fun temperatureColor(celsius: Double): Color {
 
 @Composable
 private fun Tiles(forecast: Forecast, extras: Extras, onOpenAirQuality: () -> Unit) {
-    val usualHigh = extras.usualHigh
     val current = forecast.current ?: return
     val today = forecast.days.firstOrNull()
     val zone = forecast.place.zone
     val is24 = DateFormat.is24HourFormat(LocalContext.current)
     val tiles =
         buildList<@Composable (Modifier) -> Unit> {
-            val todayHigh = today?.temperatureMax?.value
-            if (usualHigh != null && todayHigh != null) {
-                add { m -> AverageTile(todayHigh, usualHigh, m) }
-            }
             val apparent = current.apparentTemperature
             val actual = current.temperature
             if (apparent != null && actual != null) {
                 add { m ->
+                    val feels = Formats.feelsLike(actual.value, apparent.value)
                     Tile(
                         stringResource(R.string.feels_like),
                         stringResource(R.string.degrees, degrees(apparent.value)),
-                        stringResource(Formats.feelsLike(actual.value, apparent.value)),
+                        if (feels == R.string.feels_same) "" else stringResource(feels),
                         m,
+                        icon = R.drawable.ic_w_temperature,
                     )
                 }
             }
             current.uvIndex?.let { uv ->
-                val peak = today?.uvIndexMax?.value ?: uv.value
                 add { m ->
                     Tile(
                         stringResource(R.string.uv_index),
                         uv.value.toInt().toString(),
-                        if (peak < 3) stringResource(R.string.uv_low_all_day)
-                        else
-                            stringResource(
-                                R.string.uv_peak,
-                                stringResource(Formats.uvLevel(peak)).lowercase(),
-                            ),
+                        "",
                         m,
+                        icon = R.drawable.ic_w_uv,
                     ) {
                         Text(
                             stringResource(Formats.uvLevel(uv.value)),
@@ -831,16 +822,24 @@ private fun Tiles(forecast: Forecast, extras: Extras, onOpenAirQuality: () -> Un
                 }
             }
             extras.airQuality?.let { air -> add { m -> AirQualityTile(air, m, onOpenAirQuality) } }
-            current.visibility?.let { v ->
+            current.windSpeed?.let { w ->
                 add { m ->
+                    val unit = stringResource(LocalUnits.current.wind.symbol)
                     Tile(
-                        stringResource(R.string.visibility),
-                        visibilityText(v.value),
-                        stringResource(Formats.visibility(v.value)),
+                        stringResource(R.string.wind),
+                        stringResource(R.string.wind_speed, wind(w.value), unit),
+                        current.windGust?.value?.let {
+                            stringResource(R.string.wind_gusts, wind(it), unit)
+                        }
+                            ?: current.windDirection?.let {
+                                stringResource(
+                                    R.string.wind_from,
+                                    stringResource(Formats.compass(it.value)),
+                                )
+                            }
+                            ?: "",
                         m,
-                        source =
-                            if (v.metNorway == null) stringResource(R.string.open_meteo_only)
-                            else null,
+                        icon = R.drawable.ic_w_wind,
                     )
                 }
             }
@@ -856,33 +855,18 @@ private fun Tiles(forecast: Forecast, extras: Extras, onOpenAirQuality: () -> Un
                             )
                         } ?: "",
                         m,
+                        icon = R.drawable.ic_w_droplet,
                     )
                 }
             }
-            current.windSpeed?.let { w ->
+            current.visibility?.let { v ->
                 add { m ->
-                    val from =
-                        current.windDirection?.let { stringResource(Formats.compass(it.value)) }
-                    val gust = current.windGust?.value?.let { wind(it) }
                     Tile(
-                        stringResource(R.string.wind),
-                        stringResource(
-                            R.string.wind_speed,
-                            wind(w.value),
-                            stringResource(LocalUnits.current.wind.symbol),
-                        ),
-                        when {
-                            from != null && gust != null ->
-                                stringResource(
-                                    R.string.wind_from_gusts,
-                                    from,
-                                    gust,
-                                    stringResource(LocalUnits.current.wind.symbol),
-                                )
-                            from != null -> stringResource(R.string.wind_from, from)
-                            else -> ""
-                        },
+                        stringResource(R.string.visibility),
+                        visibilityText(v.value),
+                        "",
                         m,
+                        icon = R.drawable.ic_w_eye,
                     )
                 }
             }
@@ -895,6 +879,7 @@ private fun Tiles(forecast: Forecast, extras: Extras, onOpenAirQuality: () -> Un
                         Formats.time(sunrise, zone, is24),
                         stringResource(R.string.sunset, Formats.time(sunset, zone, is24)),
                         m,
+                        icon = R.drawable.ic_w_sunrise,
                     )
                 }
             }
@@ -942,48 +927,13 @@ private fun Modifier.inkStart(text: String, style: TextStyle): Modifier {
 }
 
 @Composable
-private fun AverageTile(todayHigh: Double, usualHigh: Double, modifier: Modifier) {
-    val unit = LocalUnits.current.temperature
-    val difference = degrees(todayHigh) - degrees(usualHigh)
-    val caption =
-        when {
-            todayHigh - usualHigh >= 1.5 -> R.string.average_above
-            usualHigh - todayHigh >= 1.5 -> R.string.average_below
-            else -> R.string.average_close
-        }
-    Tile(
-        stringResource(R.string.average),
-        (if (difference > 0) "+" else if (difference < 0) "−" else "") +
-            stringResource(R.string.degrees, abs(difference)),
-        stringResource(caption),
-        modifier,
-        source = stringResource(R.string.average_source),
-    ) {
-        Text(
-            stringResource(
-                R.string.average_detail,
-                stringResource(R.string.degrees, degrees(todayHigh)),
-                stringResource(R.string.degrees, degrees(usualHigh)),
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
 private fun AirQualityTile(air: AirQuality, modifier: Modifier, onOpen: () -> Unit) {
     Tile(
         stringResource(R.string.air_quality),
         air.usAqi.toString(),
-        listOfNotNull(
-                air.pm25?.let { stringResource(R.string.air_pm25, it.roundToInt()) },
-                air.pm10?.let { stringResource(R.string.air_pm10, it.roundToInt()) },
-                air.europeanAqi?.let { stringResource(R.string.air_european, it) },
-            )
-            .joinToString("\n"),
+        "",
         modifier,
-        source = stringResource(R.string.air_source),
+        icon = R.drawable.ic_w_leaf,
         onClick = onOpen,
     ) {
         Text(
@@ -1077,37 +1027,44 @@ private fun alertLevelLabel(level: AlertLevel) =
         AlertLevel.RED -> R.string.alert_level_red
     }
 
+/**
+ * A tile in the grid under the day list: [icon] and [title] on top, the [value] large, [extra]
+ * under it, and a one-line [caption], if any, at the foot of the tile.
+ */
 @Composable
 internal fun Tile(
     title: String,
     value: String,
     caption: String,
     modifier: Modifier,
-    source: String? = null,
+    @DrawableRes icon: Int? = null,
     onClick: (() -> Unit)? = null,
     extra: @Composable () -> Unit = {},
 ) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
     PvotCard(modifier, onClick = onClick, colors = skyCardColors()) {
         Column(
             Modifier.padding(CardInset).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                title,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                icon?.let {
+                    Icon(
+                        painterResource(it),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = muted,
+                    )
+                }
+                Text(title, style = MaterialTheme.typography.labelLarge, color = muted)
+            }
             Text(value, style = MaterialTheme.typography.headlineMedium)
             extra()
             Spacer(Modifier.weight(1f))
-            Text(caption, style = MaterialTheme.typography.bodySmall)
-            source?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            if (caption.isNotBlank()) Text(caption, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
