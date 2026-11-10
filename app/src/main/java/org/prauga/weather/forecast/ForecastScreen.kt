@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -39,6 +40,7 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -59,17 +61,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -94,8 +96,6 @@ import com.prauga.pvot.coreui.PvotLoadingContent
 import com.prauga.pvot.designsystem.components.PvotCard
 import com.prauga.pvot.designsystem.components.PvotCardDefaults
 import com.prauga.pvot.designsystem.components.PvotScreen
-import com.prauga.pvot.designsystem.components.button.PvotButton
-import com.prauga.pvot.designsystem.components.button.PvotButtonStyle
 import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.button.PvotIconButtonDefaults
 import java.time.Instant
@@ -118,8 +118,23 @@ import org.prauga.weather.settings.LocalUnits
 import org.prauga.weather.settings.symbol
 import org.prauga.weather.theme.WeatherColorsDefaults
 
-private val HighColor = WeatherColorsDefaults.Colors.high
-private val LowColor = WeatherColorsDefaults.Colors.low
+/** Cool to warm, in °C: the colours the day bars run through. */
+private val TemperatureScale =
+    listOf(
+        -10.0 to Color(0xFF7AA7FF),
+        5.0 to Color(0xFF6EC6E8),
+        15.0 to Color(0xFFA8D98F),
+        22.0 to Color(0xFFF5CD4B),
+        30.0 to Color(0xFFF39A3B),
+        38.0 to Color(0xFFE8533B),
+    )
+
+/** Days in the day list. */
+private const val DAYS_SHOWN = 10
+
+/** Opacity of hairlines and tracks drawn in the sky's ink. */
+private const val HAIRLINE_ALPHA = 0.15f
+
 private val RainColor = WeatherColorsDefaults.Colors.rain
 
 private const val TEMPERATURE_SPREAD = 3.0
@@ -600,49 +615,41 @@ private fun HourColumn(
 
 @Composable
 private fun DaysCard(forecast: Forecast) {
-    if (forecast.days.isEmpty()) return
-    var showAll by rememberSaveable { mutableStateOf(false) }
-    val days = if (showAll) forecast.days else forecast.days.take(7)
-    val firstSingleSource = forecast.days.firstOrNull { it.temperatureMax?.metNorway == null }
+    val days = forecast.days.take(DAYS_SHOWN)
+    if (days.isEmpty()) return
+    val rows = listOfNotNull(forecast.yesterday) + days
+    val temperatures =
+        rows.flatMap { listOfNotNull(it.temperatureMin?.value, it.temperatureMax?.value) }
+    val coolest = temperatures.minOrNull() ?: return
+    val warmest = temperatures.maxOrNull() ?: return
+    val divider = LocalContentColor.current.copy(alpha = HAIRLINE_ALPHA)
     PvotCard(Modifier.fillMaxWidth(), colors = skyCardColors()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                stringResource(R.string.days_title, forecast.days.size),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            forecast.yesterday?.let { Box(Modifier.alpha(0.6f)) { DayRow(-1, it, forecast) } }
-            days.forEachIndexed { index, day -> DayRow(index, day, forecast) }
-            if (forecast.days.size > 7) {
-                PvotButton(
-                    text =
-                        if (showAll) stringResource(R.string.days_show_fewer)
-                        else
-                            pluralStringResource(
-                                R.plurals.days_show_all,
-                                forecast.days.size,
-                                forecast.days.size,
-                            ),
-                    onClick = { showAll = !showAll },
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    style = PvotButtonStyle.Text,
-                )
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+            forecast.yesterday?.let {
+                Box(Modifier.alpha(0.6f)) { DayRow(-1, it, forecast, coolest, warmest) }
+                HorizontalDivider(thickness = 0.5.dp, color = divider)
             }
-            if (showAll && firstSingleSource != null && Provider.MET_NORWAY in forecast.providers) {
-                Text(
-                    stringResource(
-                        R.string.days_single_source,
-                        Formats.weekday(firstSingleSource.date),
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            days.forEachIndexed { index, day ->
+                if (index > 0) HorizontalDivider(thickness = 0.5.dp, color = divider)
+                DayRow(index, day, forecast, coolest, warmest)
             }
         }
     }
 }
 
+/**
+ * One day: its name, its condition with the chance of rain under it, and its low and high either
+ * side of a bar placed on the [coolest]-to-[warmest] scale of every day shown. Today's bar marks
+ * the temperature now.
+ */
 @Composable
-private fun DayRow(index: Int, day: DayPoint, forecast: Forecast) {
+private fun DayRow(
+    index: Int,
+    day: DayPoint,
+    forecast: Forecast,
+    coolest: Double,
+    warmest: Double,
+) {
     val label =
         when (index) {
             -1 -> stringResource(R.string.yesterday)
@@ -651,57 +658,108 @@ private fun DayRow(index: Int, day: DayPoint, forecast: Forecast) {
             else -> Formats.weekday(day.date)
         }
     val probability = day.precipitationProbability?.value?.toInt() ?: 0
-    val temperatures =
-        forecast.hours
-            .filter { it.time.atZone(forecast.place.zone).toLocalDate() == day.date }
-            .mapNotNull { it.temperature?.value }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, modifier = Modifier.width(84.dp), style = MaterialTheme.typography.bodyLarge)
-        ConditionIcon(day.condition?.value, true, Modifier.size(24.dp))
+    val low = day.temperatureMin?.value
+    val high = day.temperatureMax?.value
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
-            if (probability >= 10) stringResource(R.string.percent, probability) else "",
-            modifier = Modifier.width(48.dp).padding(start = 8.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = RainColor,
+            label,
+            modifier = Modifier.width(96.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            day.temperatureMax?.let { "↑" + stringResource(R.string.degrees, degrees(it.value)) }
-                ?: "",
-            modifier = Modifier.width(44.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = HighColor,
+        Column(Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            ConditionIcon(day.condition?.value, true, Modifier.size(24.dp))
+            if (probability >= 10) {
+                Text(
+                    stringResource(R.string.percent, probability),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = RainColor,
+                )
+            }
+        }
+        DayTemperature(low, R.string.low, MaterialTheme.colorScheme.onSurfaceVariant)
+        TemperatureBar(
+            low,
+            high,
+            now = if (index == 0) forecast.current?.temperature?.value else null,
+            coolest = coolest,
+            warmest = warmest,
+            modifier = Modifier.weight(1f).padding(horizontal = 12.dp).height(6.dp),
         )
-        Sparkline(temperatures, Modifier.weight(1f).height(22.dp).padding(horizontal = 8.dp))
-        Text(
-            day.temperatureMin?.let { "↓" + stringResource(R.string.degrees, degrees(it.value)) }
-                ?: "",
-            modifier = Modifier.width(44.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = LowColor,
-            textAlign = TextAlign.End,
-        )
+        DayTemperature(high, R.string.high, LocalContentColor.current)
     }
 }
 
 @Composable
-private fun Sparkline(values: List<Double>, modifier: Modifier) {
-    val color = MaterialTheme.colorScheme.onSurfaceVariant
+private fun DayTemperature(celsius: Double?, @StringRes description: Int, color: Color) {
+    val text = celsius?.let { stringResource(R.string.degrees, degrees(it)) } ?: ""
+    val spoken = if (celsius != null) stringResource(description, text) else ""
+    Text(
+        text,
+        modifier = Modifier.width(40.dp).semantics { contentDescription = spoken },
+        style = MaterialTheme.typography.bodyLarge,
+        color = color,
+        textAlign = TextAlign.End,
+    )
+}
+
+/**
+ * A day's [low] to [high] as a rounded bar on a track spanning [coolest] to [warmest], coloured
+ * from cool to warm, with a dot at [now] when given.
+ */
+@Composable
+private fun TemperatureBar(
+    low: Double?,
+    high: Double?,
+    now: Double?,
+    coolest: Double,
+    warmest: Double,
+    modifier: Modifier,
+) {
+    val ink = LocalContentColor.current
+    val track = ink.copy(alpha = HAIRLINE_ALPHA)
+    val ring = if (ink == Color.White) Color.Black.copy(alpha = 0.4f) else Color.White
     Canvas(modifier) {
-        if (values.size < 2) return@Canvas
-        val min = values.min()
-        val range = (values.max() - min).coerceAtLeast(1.0)
-        val path = Path()
-        values.forEachIndexed { i, v ->
-            val x = size.width * i / (values.size - 1)
-            val y = size.height * (1 - ((v - min) / range)).toFloat()
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        drawPath(
-            path,
-            Brush.horizontalGradient(listOf(HighColor, LowColor)),
-            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round),
+        val radius = size.height / 2
+        drawRoundRect(track, cornerRadius = CornerRadius(radius))
+        if (low == null || high == null) return@Canvas
+        val span = (warmest - coolest).coerceAtLeast(1.0)
+        fun x(celsius: Double) = (size.width * ((celsius - coolest) / span)).toFloat()
+        val start = x(low)
+        val end = maxOf(x(high), start + size.height)
+        drawRoundRect(
+            Brush.horizontalGradient(
+                0f to temperatureColor(low),
+                0.5f to temperatureColor((low + high) / 2),
+                1f to temperatureColor(high),
+                startX = start,
+                endX = end,
+            ),
+            topLeft = Offset(start, 0f),
+            size = Size(end - start, size.height),
+            cornerRadius = CornerRadius(radius),
         )
+        if (now != null) {
+            val centre = Offset(x(now.coerceIn(low, high)), radius)
+            drawCircle(ring, radius = radius + 1.5.dp.toPx(), center = centre)
+            drawCircle(ink, radius = radius, center = centre)
+        }
     }
+}
+
+/** The colour of [celsius] on the cool-to-warm scale the day bars use. */
+private fun temperatureColor(celsius: Double): Color {
+    val scale = TemperatureScale
+    if (celsius <= scale.first().first) return scale.first().second
+    if (celsius >= scale.last().first) return scale.last().second
+    val upper = scale.indexOfFirst { it.first >= celsius }
+    val (t0, c0) = scale[upper - 1]
+    val (t1, c1) = scale[upper]
+    return lerp(c0, c1, ((celsius - t0) / (t1 - t0)).toFloat())
 }
 
 @Composable

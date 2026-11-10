@@ -152,14 +152,6 @@
     <string name="sources_differ">The two forecasts differ</string>
     <string name="sources_show">Show what each source says</string>
 
-    <string name="days_title">%1$d-day forecast</string>
-    <string name="days_single_source">From %1$s on, only Open-Meteo forecasts this far ahead.</string>
-    <plurals name="days_show_all">
-        <item quantity="one">Show %1$d day</item>
-        <item quantity="other">Show all %1$d days</item>
-    </plurals>
-    <string name="days_show_fewer">Show fewer days</string>
-
     <string name="feels_like">Feels like</string>
     <string name="feels_warmer">Feels warmer than the actual temperature</string>
     <string name="feels_colder">Feels colder than the actual temperature</string>
