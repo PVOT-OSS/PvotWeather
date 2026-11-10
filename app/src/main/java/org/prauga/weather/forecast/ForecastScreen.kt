@@ -3,6 +3,9 @@
 
 package org.prauga.weather.forecast
 
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
 import android.text.format.DateFormat
 import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -69,6 +73,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -78,12 +84,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -128,6 +136,9 @@ private val TemperatureScale =
         30.0 to Color(0xFFF39A3B),
         38.0 to Color(0xFFE8533B),
     )
+
+/** How far text inside a card sits from its edge; text straight on the sky starts there too. */
+private val CardInset = 16.dp
 
 /** Days in the day list. */
 private const val DAYS_SHOWN = 10
@@ -408,9 +419,17 @@ private fun ForecastContent(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 header()
-                Spacer(Modifier.height(150.dp))
-                NowBlock(forecast, state.extras)
-                HourlyStrip(forecast)
+                // Text straight on the sky starts on the line the text inside the cards does.
+                Column(
+                    Modifier.padding(horizontal = CardInset),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Spacer(Modifier.height(150.dp))
+                    NowBlock(forecast, state.extras)
+                }
+                PvotCard(Modifier.fillMaxWidth(), colors = skyCardColors()) {
+                    HourlyStrip(forecast)
+                }
             }
         }
         if (state.extras.alerts.isNotEmpty())
@@ -437,16 +456,15 @@ private fun NowBlock(forecast: Forecast, extras: Extras) {
                     showSources = !showSources
                 }
             ) {
-                Text(
-                    degrees(temperature.value).toString(),
-                    style =
-                        MaterialTheme.typography.displayLarge.copy(
-                            fontSize = 104.sp,
-                            lineHeight = 104.sp,
-                            fontWeight = FontWeight.Light,
-                            letterSpacing = (-4).sp,
-                        ),
-                )
+                val digits = degrees(temperature.value).toString()
+                val digitsStyle =
+                    MaterialTheme.typography.displayLarge.copy(
+                        fontSize = 104.sp,
+                        lineHeight = 104.sp,
+                        fontWeight = FontWeight.Light,
+                        letterSpacing = (-4).sp,
+                    )
+                Text(digits, modifier = Modifier.inkStart(digits, digitsStyle), style = digitsStyle)
                 Text(
                     stringResource(LocalUnits.current.temperature.symbol),
                     modifier = Modifier.padding(top = 16.dp, start = 4.dp),
@@ -550,7 +568,10 @@ private fun HourlyStrip(forecast: Forecast) {
     val hours = forecast.hours.take(25)
     val showChance = hours.any { (it.precipitationProbability?.value ?: 0.0) >= 20 }
     val showAmount = hours.any { (it.precipitation?.value ?: 0.0) >= 0.1 }
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         itemsIndexed(hours) { index, hour ->
             val shown = if (index == 0) forecast.current ?: hour else hour
             HourColumn(
@@ -624,7 +645,7 @@ private fun DaysCard(forecast: Forecast) {
     val warmest = temperatures.maxOrNull() ?: return
     val divider = LocalContentColor.current.copy(alpha = HAIRLINE_ALPHA)
     PvotCard(Modifier.fillMaxWidth(), colors = skyCardColors()) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Column(Modifier.padding(horizontal = CardInset, vertical = 4.dp)) {
             forecast.yesterday?.let {
                 Box(Modifier.alpha(0.6f)) { DayRow(-1, it, forecast, coolest, warmest) }
                 HorizontalDivider(thickness = 0.5.dp, color = divider)
@@ -892,6 +913,34 @@ private fun Tiles(forecast: Forecast, extras: Extras, onOpenAirQuality: () -> Un
     }
 }
 
+/**
+ * Moves [text] drawn in [style] left by its first glyph's side bearing, so the ink of large text
+ * starts on the same line as the smaller text around it rather than a few dp in.
+ */
+@Composable
+private fun Modifier.inkStart(text: String, style: TextStyle): Modifier {
+    val resolver = LocalFontFamilyResolver.current
+    val density = LocalDensity.current
+    val typeface =
+        remember(resolver, style) {
+            resolver.resolve(style.fontFamily, style.fontWeight ?: FontWeight.Normal).value
+                as? Typeface
+        } ?: return this
+    val bearing =
+        remember(text, typeface, style, density) {
+            val paint =
+                Paint().apply {
+                    this.typeface = typeface
+                    textSize = with(density) { style.fontSize.toPx() }
+                    if (style.letterSpacing.isSp) {
+                        letterSpacing = style.letterSpacing.value / style.fontSize.value
+                    }
+                }
+            Rect().also { paint.getTextBounds(text, 0, text.length, it) }.left
+        }
+    return offset { IntOffset(-bearing, 0) }
+}
+
 @Composable
 private fun AverageTile(todayHigh: Double, usualHigh: Double, modifier: Modifier) {
     val unit = LocalUnits.current.temperature
@@ -1040,7 +1089,7 @@ internal fun Tile(
 ) {
     PvotCard(modifier, onClick = onClick, colors = skyCardColors()) {
         Column(
-            Modifier.padding(16.dp).fillMaxHeight(),
+            Modifier.padding(CardInset).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
