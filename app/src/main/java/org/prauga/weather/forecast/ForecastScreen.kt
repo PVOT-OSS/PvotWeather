@@ -4,6 +4,7 @@
 package org.prauga.weather.forecast
 
 import android.text.format.DateFormat
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
@@ -38,11 +39,14 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,9 +63,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -79,6 +83,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.coreui.PvotEmptyContent
@@ -116,6 +121,9 @@ private val RainColor = WeatherColorsDefaults.Colors.rain
 
 private const val TEMPERATURE_SPREAD = 3.0
 
+/** Opacity of secondary text drawn straight on the sky, against the sky's own text colour. */
+private const val ON_SKY_MUTED = 0.75f
+
 data class MenuItem(@StringRes val label: Int, val onClick: () -> Unit)
 
 @Composable
@@ -151,8 +159,19 @@ fun ForecastScreen(
     onOpenAirQuality: () -> Unit = {},
 ) {
     val background = MaterialTheme.colorScheme.background
+    val dark = isSystemInDarkTheme()
     val forecast = state.forecast
     val current = forecast?.current
+    val backdrop =
+        forecast?.let {
+            Backdrop.of(
+                current?.condition?.value,
+                current?.isDay,
+                current?.time ?: Instant.now(),
+                it.days.firstOrNull()?.sunrise,
+                it.days.firstOrNull()?.sunset,
+            )
+        }
     Surface(
         Modifier.fillMaxSize(),
         color = background,
@@ -160,28 +179,8 @@ fun ForecastScreen(
     ) {
         Box(Modifier.fillMaxSize()) {
             val listState = rememberLazyListState()
-            if (forecast != null) {
-                WeatherBackdrop(
-                    Backdrop.of(
-                        current?.condition?.value,
-                        current?.isDay,
-                        current?.time ?: Instant.now(),
-                        forecast?.days?.firstOrNull()?.sunrise,
-                        forecast?.days?.firstOrNull()?.sunset,
-                    ),
-                    background,
-                    isSystemInDarkTheme(),
-                    Modifier.fillMaxWidth().fillMaxHeight(0.62f).graphicsLayer {
-                        translationY =
-                            if (listState.firstVisibleItemIndex == 0) {
-                                -listState.firstVisibleItemScrollOffset.toFloat()
-                            } else {
-                                -size.height
-                            }
-                    },
-                    running = listState.firstVisibleItemIndex == 0,
-                )
-            }
+            // The sky fills the screen and stays put while the forecast scrolls over it.
+            if (backdrop != null) WeatherBackdrop(backdrop, dark, Modifier.fillMaxSize())
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
                 onRefresh = onRefresh,
@@ -192,7 +191,12 @@ fun ForecastScreen(
                 }
                 when {
                     forecast != null ->
-                        ForecastContent(state, forecast, listState, header, onOpenAirQuality)
+                        CompositionLocalProvider(
+                            LocalContentColor provides
+                                (backdrop?.onSky(background, dark) ?: LocalContentColor.current)
+                        ) {
+                            ForecastContent(state, forecast, listState, header, onOpenAirQuality)
+                        }
                     state.noPlaces ->
                         Status(header) {
                             PvotEmptyContent(
@@ -213,7 +217,8 @@ fun ForecastScreen(
                         }
                 }
             }
-            StatusBarScrim(background)
+            StatusBarScrim(backdrop?.top(background, dark) ?: background)
+            StatusBarIcons(lightBackground = backdrop?.isLight(background, dark))
         }
     }
 }
@@ -279,7 +284,7 @@ private fun PlaceHeader(place: Place?, onOpenPlaces: (() -> Unit)?, menu: List<M
                 painterResource(R.drawable.ic_menu),
                 stringResource(R.string.menu),
                 { menuOpen = true },
-                colors = PvotIconButtonDefaults.plainColors(),
+                colors = PvotIconButtonDefaults.plainColors(LocalContentColor.current),
             )
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 menu.forEach { item ->
@@ -296,6 +301,7 @@ private fun PlaceHeader(place: Place?, onOpenPlaces: (() -> Unit)?, menu: List<M
     }
 }
 
+/** Fades content scrolling under the status bar into [color], the colour behind it. */
 @Composable
 private fun StatusBarScrim(color: Color) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -304,6 +310,22 @@ private fun StatusBarScrim(color: Color) {
             .height(top + 12.dp)
             .background(Brush.verticalGradient(0.6f to color, 1f to color.copy(alpha = 0f)))
     )
+}
+
+/**
+ * Colours the status-bar icons for [lightBackground]: dark icons over a light one, light icons over
+ * a dark one, or the theme's own choice when null. Puts the theme's choice back on leaving.
+ */
+@Composable
+private fun StatusBarIcons(lightBackground: Boolean?) {
+    val window = LocalActivity.current?.window ?: return
+    val view = LocalView.current
+    val controller = remember(window, view) { WindowCompat.getInsetsController(window, view) }
+    val themeDefault = remember(controller) { controller.isAppearanceLightStatusBars }
+    DisposableEffect(controller, lightBackground) {
+        controller.isAppearanceLightStatusBars = lightBackground ?: themeDefault
+        onDispose { controller.isAppearanceLightStatusBars = themeDefault }
+    }
 }
 
 @Composable
@@ -399,7 +421,7 @@ private fun NowBlock(forecast: Forecast, extras: Extras) {
                 sourcesLine(temperature),
                 modifier = Modifier.padding(top = 4.dp),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = LocalContentColor.current.copy(alpha = ON_SKY_MUTED),
             )
         }
     }
@@ -963,7 +985,7 @@ private fun UvBar(index: Double, modifier: Modifier) {
 private fun Footer(state: ForecastUiState) {
     val is24 = DateFormat.is24HourFormat(LocalContext.current)
     val zone = ZoneId.systemDefault()
-    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val muted = LocalContentColor.current.copy(alpha = ON_SKY_MUTED)
     Column(
         Modifier.fillMaxWidth().padding(top = 8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),

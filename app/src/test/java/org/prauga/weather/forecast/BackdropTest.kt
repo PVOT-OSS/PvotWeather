@@ -3,8 +3,12 @@
 
 package org.prauga.weather.forecast
 
+import androidx.compose.ui.graphics.Color
 import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.prauga.weather.core.model.Condition
 
@@ -48,5 +52,30 @@ class BackdropTest {
     fun weatherBeatsTimeOfDay() {
         assertEquals(Backdrop.LIGHT_RAIN, of(Condition.RAIN, isDay = false, now = midnight))
         assertEquals(Backdrop.CLOUDY, of(Condition.CLOUDY, now = sunset))
+    }
+
+    @Test
+    fun brightSkiesWantDarkStatusIcons() {
+        assertTrue(Backdrop.CLOUDY.isLight(Color.Black, dark = true))
+        assertTrue(Backdrop.SNOW.isLight(Color.Black, dark = true))
+        assertTrue(Backdrop.FOG.isLight(Color.Black, dark = true))
+        assertTrue(Backdrop.CLEAR.isLight(Color.White, dark = false))
+        assertTrue(Backdrop.SUNRISE_SUNSET.isLight(Color.White, dark = false))
+    }
+
+    @Test
+    fun darkSkiesWantLightStatusIcons() {
+        assertFalse(Backdrop.NIGHT.isLight(Color.White, dark = false))
+        assertFalse(Backdrop.THUNDERSTORM.isLight(Color.White, dark = false))
+        assertFalse(Backdrop.HEAVY_RAIN.isLight(Color.Black, dark = true))
+        assertFalse(Backdrop.CLEAR.isLight(Color.Black, dark = true))
+    }
+
+    @Test
+    fun textOnTheSkyContrastsWithIt() {
+        assertEquals(Color.White, Backdrop.NIGHT.onSky(Color.White, dark = false))
+        assertEquals(Color.White, Backdrop.THUNDERSTORM.onSky(Color.Black, dark = true))
+        assertNotEquals(Color.White, Backdrop.SNOW.onSky(Color.Black, dark = true))
+        assertNotEquals(Color.White, Backdrop.CLOUDY.onSky(Color.Black, dark = true))
     }
 }
