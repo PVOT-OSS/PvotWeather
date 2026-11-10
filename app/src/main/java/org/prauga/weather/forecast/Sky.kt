@@ -10,10 +10,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.tan
 
@@ -77,10 +79,8 @@ fun DrawScope.drawSky(sky: Sky, t: Float, alpha: Float, colors: SkyColors, path:
     when (sky) {
         Sky.SUN -> sun(t, alpha, colors.sun, path)
         Sky.GLOW -> glow(t, alpha, colors.sun)
-        Sky.CLOUDS ->
-            clouds(t, alpha, colors.light, count = 4, scale = 0.16f, strength = 0.6f, band = 0.5f)
-        Sky.OVERCAST ->
-            clouds(t, alpha, colors.light, count = 6, scale = 0.22f, strength = 0.4f, band = 0.5f)
+        Sky.CLOUDS -> cloudDeck(t, alpha, colors, perLayer = 3, strength = 0.5f, cover = 0.5f)
+        Sky.OVERCAST -> cloudDeck(t, alpha, colors, perLayer = 7, strength = 0.42f, cover = 0.75f)
         Sky.RAIN -> {
             rainClouds(t, alpha, colors.shade, strength = 0.28f)
             rainLayers(t, alpha, colors.light, intensity = 1f, lean = 7f)
@@ -176,6 +176,81 @@ private fun DrawScope.clouds(
         puff(color, x, y, r, a)
         puff(color, x + r * 0.75f, y - r * 0.25f, r * 0.8f, a)
         puff(color, x - r * 0.7f, y - r * 0.1f, r * 0.7f, a * 0.9f)
+    }
+}
+
+/** How much wider than tall a wisp is, by layer from far to near. */
+private val DeckStretch = floatArrayOf(4.2f, 3.2f, 2.4f)
+
+/** A wisp's height, as a fraction of the sky's, by layer from far to near. */
+private val DeckSize = floatArrayOf(0.05f, 0.075f, 0.1f)
+
+/** How fast a layer drifts, in sky widths a second, from far to near. */
+private val DeckSpeed = floatArrayOf(0.006f, 0.012f, 0.022f)
+
+/**
+ * A deck of cloud in three layers, [perLayer] wisps each: far wisps long, thin, faint and slow,
+ * near ones rounder, stronger and faster, so the sky drifts with some depth. Each wisp is a lit
+ * body over a darker underside, thickest near the top of the sky and thinning out by [cover] of its
+ * height.
+ */
+private fun DrawScope.cloudDeck(
+    t: Float,
+    alpha: Float,
+    colors: SkyColors,
+    perLayer: Int,
+    strength: Float,
+    cover: Float,
+) {
+    val w = size.width
+    val h = size.height
+    for (layer in 0 until 3) {
+        val depth = (layer + 1) / 3f
+        for (i in 0 until perLayer) {
+            val id = layer * 29 + i
+            val r = h * DeckSize[layer] * (0.75f + 0.5f * SkyMath.noise(id, 40))
+            val stretch = DeckStretch[layer] * (0.8f + 0.4f * SkyMath.noise(id, 41))
+            val speed = w * DeckSpeed[layer] * (0.8f + 0.4f * SkyMath.noise(id, 42))
+            val span = w + 2 * stretch * r
+            val x = (SkyMath.noise(id, 43) * span + t * speed) % span - stretch * r
+            val y =
+                h * cover * SkyMath.noise(id, 44).pow(1.4f) + sin(t * 0.15f + id * 1.9f) * r * 0.08f
+            val a =
+                alpha * strength * (0.45f + 0.55f * depth) * (0.6f + 0.4f * SkyMath.noise(id, 45))
+            val breathe = 1f + 0.07f * sin(t * 0.3f + id * 2.3f)
+            wisp(colors.shade, x, y + r * 0.35f, r * breathe, stretch, a * 0.5f, core = 0.25f)
+            wisp(colors.light, x, y, r * 0.85f * breathe, stretch, a * 0.72f, core = 0.3f)
+        }
+    }
+}
+
+/**
+ * A soft puff [stretch] times wider than tall: solid out to [core] of its radius, then fading to
+ * nothing at its edge.
+ */
+private fun DrawScope.wisp(
+    color: Color,
+    x: Float,
+    y: Float,
+    radius: Float,
+    stretch: Float,
+    alpha: Float,
+    core: Float,
+) {
+    if (alpha <= 0f) return
+    val centre = Offset(x, y)
+    withTransform({ scale(stretch, 1f, pivot = centre) }) {
+        drawCircle(
+            Brush.radialGradient(
+                0f to color.copy(alpha = alpha),
+                core to color.copy(alpha = alpha),
+                1f to color.copy(alpha = 0f),
+                center = centre,
+                radius = radius,
+            ),
+            radius = radius,
+            center = centre,
+        )
     }
 }
 
