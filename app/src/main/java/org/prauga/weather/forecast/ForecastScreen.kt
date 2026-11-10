@@ -70,13 +70,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -363,7 +363,7 @@ private fun NowBlock(forecast: Forecast, extras: Extras) {
                 Text(
                     degrees(temperature.value).toString(),
                     style =
-                        TextStyle(
+                        MaterialTheme.typography.displayLarge.copy(
                             fontSize = 104.sp,
                             lineHeight = 104.sp,
                             fontWeight = FontWeight.Light,
@@ -373,7 +373,13 @@ private fun NowBlock(forecast: Forecast, extras: Extras) {
                 Text(
                     stringResource(LocalUnits.current.temperature.symbol),
                     modifier = Modifier.padding(top = 16.dp, start = 4.dp),
-                    style = TextStyle(fontSize = 40.sp, fontWeight = FontWeight.Light),
+                    style =
+                        MaterialTheme.typography.displayLarge.copy(
+                            fontSize = 40.sp,
+                            lineHeight = TextUnit.Unspecified,
+                            fontWeight = FontWeight.Light,
+                            letterSpacing = TextUnit.Unspecified,
+                        ),
                 )
                 if (differs) DisagreementDot(Modifier.padding(top = 22.dp, start = 6.dp))
             }
