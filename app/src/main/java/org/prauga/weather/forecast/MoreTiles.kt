@@ -3,12 +3,8 @@
 
 package org.prauga.weather.forecast
 
-import android.text.format.DateFormat
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import kotlin.math.roundToInt
@@ -16,81 +12,50 @@ import org.prauga.weather.R
 import org.prauga.weather.core.data.Extras
 import org.prauga.weather.core.model.Forecast
 import org.prauga.weather.core.model.HourPoint
-import org.prauga.weather.settings.LocalUnits
-import org.prauga.weather.settings.symbol
 
 private typealias TileContent = @Composable (Modifier) -> Unit
 
+/**
+ * The tiles after the always-on ones: precipitation, then thunder, fog, snow and pollen, each only
+ * when there is some.
+ */
 internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = buildList {
     val current = forecast.current ?: return@buildList
     val next24 = forecast.hours.take(24)
-    val today = forecast.days.firstOrNull()
 
-    precipitationTile(next24, today?.precipitationSum?.value)?.let(::add)
-
-    current.pressure?.let { pressure ->
-        val later = forecast.hours.getOrNull(3)?.pressure?.value
-        add { m ->
-            Tile(
-                stringResource(R.string.pressure),
-                pressureText(pressure.value),
-                stringResource(Formats.pressureTrend(pressure.value, later)),
-                m,
-            )
-        }
-    }
-
-    current.cloudCover?.let { cover ->
-        add { m ->
-            Tile(
-                stringResource(R.string.cloud_cover),
-                stringResource(R.string.percent, cover.value.roundToInt()),
-                listOfNotNull(
-                        current.cloudLow?.let {
-                            stringResource(R.string.cloud_low, it.value.roundToInt())
-                        },
-                        current.cloudMid?.let {
-                            stringResource(R.string.cloud_mid, it.value.roundToInt())
-                        },
-                        current.cloudHigh?.let {
-                            stringResource(R.string.cloud_high, it.value.roundToInt())
-                        },
-                    )
-                    .joinToString("\n"),
-                m,
-            )
-        }
-    }
+    precipitationTile(next24)?.let(::add)
 
     forecast.hours
         .take(12)
         .mapNotNull { it.thunderProbability?.value }
         .maxOrNull()
+        ?.takeIf { it >= THUNDER_LIKELY }
         ?.let { thunder ->
             add { m ->
                 Tile(
                     stringResource(R.string.thunder),
                     stringResource(R.string.percent, thunder.roundToInt()),
-                    stringResource(
-                        if (thunder >= 10) R.string.thunder_possible else R.string.thunder_unlikely
-                    ),
+                    stringResource(R.string.thunder_possible),
                     m,
-                    source = stringResource(R.string.met_only),
+                    icon = R.drawable.ic_w_storm,
                 )
             }
         }
 
-    current.fog?.value?.let { fog ->
-        add { m ->
-            Tile(
-                stringResource(R.string.fog),
-                stringResource(R.string.percent, fog.roundToInt()),
-                stringResource(if (fog >= 20) R.string.fog_present else R.string.fog_none),
-                m,
-                source = stringResource(R.string.met_only),
-            )
+    current.fog
+        ?.value
+        ?.takeIf { it >= FOG_PRESENT }
+        ?.let { fog ->
+            add { m ->
+                Tile(
+                    stringResource(R.string.fog),
+                    stringResource(R.string.percent, fog.roundToInt()),
+                    stringResource(R.string.fog_present),
+                    m,
+                    icon = R.drawable.ic_w_fog,
+                )
+            }
         }
-    }
 
     val depth = current.snowDepth?.value ?: 0.0
     val falling = next24.sumOf { it.snowfall?.value ?: 0.0 }
@@ -101,103 +66,7 @@ internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = 
                 snowDepthText(depth),
                 stringResource(R.string.snow_falling, snowfall(falling), snowUnit()),
                 m,
-                source = stringResource(R.string.open_meteo_only),
-            )
-        }
-    }
-
-    val sunshine = today?.sunshineSeconds
-    val daylight = today?.daylightSeconds
-    if (sunshine != null && daylight != null) {
-        add { m ->
-            Tile(
-                stringResource(R.string.sunshine),
-                stringResource(R.string.hours_short, Formats.hours(sunshine)),
-                stringResource(R.string.sunshine_of_daylight, Formats.hours(daylight)),
-                m,
-                source = stringResource(R.string.open_meteo_only),
-            )
-        }
-    }
-
-    extras.moon?.let { moon ->
-        add { m ->
-            val is24 = DateFormat.is24HourFormat(LocalContext.current)
-            val zone = forecast.place.zone
-            Tile(
-                stringResource(R.string.moon),
-                stringResource(Formats.moonPhase(moon.phaseDegrees)),
-                listOfNotNull(
-                        moon.rise?.let {
-                            stringResource(R.string.moonrise, Formats.time(it, zone, is24))
-                        },
-                        moon.set?.let {
-                            stringResource(R.string.moonset, Formats.time(it, zone, is24))
-                        },
-                    )
-                    .joinToString("\n"),
-                m,
-                source = stringResource(R.string.met_only),
-            ) {
-                Text(
-                    stringResource(R.string.moon_lit, Formats.moonIllumination(moon.phaseDegrees)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-
-    extras.sea?.let { sea ->
-        add { m ->
-            Tile(
-                stringResource(R.string.sea),
-                sea.waveHeight?.let { wavesText(it.value) }
-                    ?: sea.seaTemperature?.let {
-                        stringResource(R.string.degrees, degrees(it.value))
-                    }
-                    ?: "–",
-                listOfNotNull(
-                        sea.seaTemperature?.let {
-                            stringResource(
-                                R.string.sea_temperature,
-                                stringResource(R.string.degrees, degrees(it.value)),
-                            )
-                        },
-                        sea.waveDirection?.let {
-                            stringResource(R.string.waves_from, stringResource(Formats.compass(it)))
-                        },
-                        sea.wavePeriod?.let {
-                            stringResource(R.string.wave_period, it.roundToInt())
-                        },
-                        sea.currentSpeed?.let {
-                            stringResource(
-                                R.string.sea_current,
-                                Formats.wind(it, LocalUnits.current.wind).toString(),
-                                stringResource(LocalUnits.current.wind.symbol),
-                            )
-                        },
-                    )
-                    .joinToString("\n"),
-                m,
-            )
-        }
-    }
-
-    extras.river?.let { river ->
-        add { m ->
-            Tile(
-                stringResource(R.string.river),
-                stringResource(R.string.value_unit, flowValue(river.discharge), flowUnit()),
-                listOfNotNull(
-                        river.mean?.let { stringResource(Formats.riverLevel(river.discharge, it)) },
-                        river.mean?.let {
-                            stringResource(R.string.discharge_usual, flowValue(it), flowUnit())
-                        },
-                    )
-                    .joinToString("\n"),
-                m,
-                source = stringResource(R.string.river_source),
+                icon = R.drawable.ic_w_snow,
             )
         }
     }
@@ -205,49 +74,42 @@ internal fun moreTiles(forecast: Forecast, extras: Extras): List<TileContent> = 
     extras.airQuality
         ?.pollen
         ?.takeIf { it.isNotEmpty() }
-        ?.let { pollen ->
-            val (worst, level) = pollen.maxBy { it.value }
+        ?.maxBy { it.value }
+        ?.takeIf { it.value >= 1 }
+        ?.let { (worst, level) ->
             add { m ->
                 Tile(
                     stringResource(R.string.pollen),
-                    if (level < 1) stringResource(R.string.pollen_none)
-                    else stringResource(Formats.pollenName(worst)),
-                    if (level < 1) stringResource(R.string.pollen_none_caption)
-                    else
-                        pluralStringResource(
-                            R.plurals.pollen_grains,
-                            level.roundToInt(),
-                            level.roundToInt(),
-                        ),
+                    stringResource(Formats.pollenName(worst)),
+                    pluralStringResource(
+                        R.plurals.pollen_grains,
+                        level.roundToInt(),
+                        level.roundToInt(),
+                    ),
                     m,
-                    source = stringResource(R.string.air_source),
+                    icon = R.drawable.ic_w_leaf,
                 )
             }
         }
 }
 
-private fun precipitationTile(next24: List<HourPoint>, todaySum: Double?): TileContent? {
+/** Thunder chance, in percent, from which the thunder tile shows. */
+private const val THUNDER_LIKELY = 10.0
+
+/** Fog cover, in percent, from which the fog tile shows. */
+private const val FOG_PRESENT = 20.0
+
+private fun precipitationTile(next24: List<HourPoint>): TileContent? {
     val amounts = next24.mapNotNull { it.precipitation?.value }
     if (amounts.isEmpty()) return null
     val total = amounts.sum()
-    val mins = next24.mapNotNull { it.precipitationMin }
-    val maxs = next24.mapNotNull { it.precipitationMax }
-    val range = if (mins.isNotEmpty() && mins.size == maxs.size) mins.sum() to maxs.sum() else null
     return { m ->
         Tile(
             stringResource(R.string.precipitation),
             rainText(total),
-            listOfNotNull(
-                    stringResource(R.string.precipitation_next_24),
-                    range?.let { (lo, hi) ->
-                        stringResource(R.string.precipitation_range, rain(lo), rain(hi), rainUnit())
-                    },
-                    todaySum?.let {
-                        stringResource(R.string.precipitation_today, rain(it), rainUnit())
-                    },
-                )
-                .joinToString("\n"),
+            stringResource(R.string.precipitation_next_24),
             m,
+            icon = R.drawable.ic_w_umbrella,
         )
     }
 }
