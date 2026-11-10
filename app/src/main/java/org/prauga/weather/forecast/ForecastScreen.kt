@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +54,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -90,6 +92,7 @@ import com.prauga.pvot.coreui.PvotEmptyContent
 import com.prauga.pvot.coreui.PvotErrorContent
 import com.prauga.pvot.coreui.PvotLoadingContent
 import com.prauga.pvot.designsystem.components.PvotCard
+import com.prauga.pvot.designsystem.components.PvotCardDefaults
 import com.prauga.pvot.designsystem.components.PvotScreen
 import com.prauga.pvot.designsystem.components.button.PvotButton
 import com.prauga.pvot.designsystem.components.button.PvotButtonStyle
@@ -191,10 +194,7 @@ fun ForecastScreen(
                 }
                 when {
                     forecast != null ->
-                        CompositionLocalProvider(
-                            LocalContentColor provides
-                                (backdrop?.onSky(background, dark) ?: LocalContentColor.current)
-                        ) {
+                        OnSky(backdrop?.onSky(background, dark)) {
                             ForecastContent(state, forecast, listState, header, onOpenAirQuality)
                         }
                     state.noPlaces ->
@@ -300,6 +300,46 @@ private fun PlaceHeader(place: Place?, onOpenPlaces: (() -> Unit)?, menu: List<M
         }
     }
 }
+
+/** Card fill over a sky drawn in white ink: the sky, a shade darker. */
+private val SkyCardUnderLightInk = Color.Black.copy(alpha = 0.2f)
+
+/** Card fill over a sky drawn in dark ink: the sky, a shade lighter. */
+private val SkyCardUnderDarkInk = Color.White.copy(alpha = 0.3f)
+
+/** The fill [skyCardColors] gives cards, or null off the sky. */
+private val LocalSkyCard = staticCompositionLocalOf<Color?> { null }
+
+/**
+ * Draws [content] straight on the sky in [ink]: text in [ink], secondary text in a muted [ink], and
+ * cards as a translucent shade of the sky rather than the theme's surface. Null [ink] leaves the
+ * theme as it is.
+ */
+@Composable
+private fun OnSky(ink: Color?, content: @Composable () -> Unit) {
+    if (ink == null) {
+        content()
+        return
+    }
+    MaterialTheme(
+        colorScheme =
+            MaterialTheme.colorScheme.copy(onSurfaceVariant = ink.copy(alpha = ON_SKY_MUTED)),
+        shapes = MaterialTheme.shapes,
+        typography = MaterialTheme.typography,
+    ) {
+        CompositionLocalProvider(
+            LocalContentColor provides ink,
+            LocalSkyCard provides
+                if (ink == Color.White) SkyCardUnderLightInk else SkyCardUnderDarkInk,
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun skyCardColors(): CardColors =
+    LocalSkyCard.current?.let { PvotCardDefaults.colors(containerColor = it) }
+        ?: PvotCardDefaults.colors()
 
 /** Fades content scrolling under the status bar into [color], the colour behind it. */
 @Composable
@@ -564,7 +604,7 @@ private fun DaysCard(forecast: Forecast) {
     var showAll by rememberSaveable { mutableStateOf(false) }
     val days = if (showAll) forecast.days else forecast.days.take(7)
     val firstSingleSource = forecast.days.firstOrNull { it.temperatureMax?.metNorway == null }
-    PvotCard(Modifier.fillMaxWidth()) {
+    PvotCard(Modifier.fillMaxWidth(), colors = skyCardColors()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 stringResource(R.string.days_title, forecast.days.size),
@@ -875,6 +915,7 @@ private fun AlertsCard(alerts: List<Alert>, zone: ZoneId) {
                 PvotCard(
                     Modifier.fillMaxWidth(),
                     onClick = alert.url?.let { url -> { uriHandler.openUri(url) } },
+                    colors = skyCardColors(),
                 ) {
                     Row(Modifier.height(IntrinsicSize.Min)) {
                         Box(
@@ -939,7 +980,7 @@ internal fun Tile(
     onClick: (() -> Unit)? = null,
     extra: @Composable () -> Unit = {},
 ) {
-    PvotCard(modifier, onClick = onClick) {
+    PvotCard(modifier, onClick = onClick, colors = skyCardColors()) {
         Column(
             Modifier.padding(16.dp).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
