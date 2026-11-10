@@ -319,5 +319,6 @@
     <string name="backdrop_snow">Snow</string>
     <string name="backdrop_fog">Fog</string>
     <string name="backdrop_sunrise_sunset">Sunrise and sunset</string>
+    <string name="backdrop_night_cloudy">Cloudy night</string>
     <string name="backdrop_night">Night</string>
 </resources>

@@ -86,5 +86,6 @@ private fun Backdrop.label(): Int =
         Backdrop.SNOW -> R.string.backdrop_snow
         Backdrop.FOG -> R.string.backdrop_fog
         Backdrop.SUNRISE_SUNSET -> R.string.backdrop_sunrise_sunset
+        Backdrop.NIGHT_CLOUDY -> R.string.backdrop_night_cloudy
         Backdrop.NIGHT -> R.string.backdrop_night
     }

@@ -45,6 +45,7 @@ enum class Backdrop(val colors: List<Color>, val sky: Sky) {
     SNOW(listOf(Color(0xFFFFFFFF), Color(0xFFD8EFFF)), Sky.SNOW),
     FOG(listOf(Color(0xFFE0E0E0), Color(0xFFB0B0B0)), Sky.FOG),
     SUNRISE_SUNSET(listOf(Color(0xFFFF9A8B), Color(0xFFFF6A88), Color(0xFFC64DFF)), Sky.GLOW),
+    NIGHT_CLOUDY(listOf(Color(0xFF3B4352), Color(0xFF1C2028)), Sky.OVERCAST),
     NIGHT(listOf(Color(0xFF1B2735), Color(0xFF090A0F)), Sky.STARS);
 
     companion object {
@@ -73,7 +74,7 @@ enum class Backdrop(val colors: List<Color>, val sky: Sky) {
                         null,
                         Condition.CLEAR -> CLEAR
                         Condition.PARTLY_CLOUDY -> PARTLY_CLOUDY
-                        Condition.CLOUDY -> CLOUDY
+                        Condition.CLOUDY -> if (isDay == false) NIGHT_CLOUDY else CLOUDY
                         Condition.FOG -> FOG
                         Condition.DRIZZLE,
                         Condition.RAIN_SHOWERS,
