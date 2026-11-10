@@ -172,7 +172,8 @@ fun ForecastRoute(
         state,
         onRefresh = { viewModel.refresh(force = true) },
         onOpenPlaces = onOpenPlaces,
-        menu = listOfNotNull(onOpenPlaces?.let { MenuItem(R.string.places, it) }) + menu,
+        // Places opens from the place name above the forecast, so it isn't in the menu as well.
+        menu = menu,
         onOpenAirQuality = onOpenAirQuality,
     )
 }
@@ -298,11 +299,19 @@ private fun PlaceHeader(place: Place?, onOpenPlaces: (() -> Unit)?, menu: List<M
             )
             Text(
                 place?.let { placeTitle(it) } ?: stringResource(R.string.app_name),
-                modifier = Modifier.padding(start = 8.dp),
+                modifier = Modifier.padding(start = 8.dp).weight(1f, fill = false),
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            // The place name opens Places, where the other places are; the chevron says so.
+            if (onOpenPlaces != null) {
+                Icon(
+                    painterResource(R.drawable.ic_chevron_down),
+                    contentDescription = null,
+                    modifier = Modifier.padding(start = 4.dp).size(18.dp),
+                )
+            }
         }
         Box {
             PvotIconButton(
