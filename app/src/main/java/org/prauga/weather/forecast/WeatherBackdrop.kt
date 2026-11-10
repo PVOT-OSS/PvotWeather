@@ -97,6 +97,9 @@ private val SkyShade = Color(0xFF1C2129)
 private val SkyInkLight = Color(0xFF6F93B5)
 private const val BLEND_MILLIS = 800
 
+/** A calm sky's frame interval: 30 frames a second. */
+private const val CALM_FRAME_NANOS = 33_000_000L
+
 /** How much of the sky the dark theme lets through; the rest is the theme background. */
 private const val DARK_SKY_ALPHA = 0.8f
 
@@ -148,7 +151,7 @@ fun WeatherBackdrop(
             tween(BLEND_MILLIS),
             label = "third",
         )
-    val seconds = rememberSkyClock(running)
+    val seconds = rememberSkyClock(running, backdrop.sky.calm)
     var shown by remember { mutableStateOf(backdrop.sky) }
     var fading by remember { mutableStateOf<Sky?>(null) }
     val blend = remember { Animatable(1f) }
@@ -204,8 +207,12 @@ fun WeatherBackdrop(
     }
 }
 
+/**
+ * Elapsed seconds while [running], ticking every frame, or at [CALM_FRAME_NANOS] for a [calm] sky
+ * whose slow drift needs no more, which spares the GPU most of its frames.
+ */
 @Composable
-private fun rememberSkyClock(running: Boolean): FloatState {
+private fun rememberSkyClock(running: Boolean, calm: Boolean): FloatState {
     val seconds = remember { mutableFloatStateOf(0f) }
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     val animatorsEnabled = remember { ValueAnimator.areAnimatorsEnabled() }
@@ -214,8 +221,14 @@ private fun rememberSkyClock(running: Boolean): FloatState {
         if (!animate) return@LaunchedEffect
         val base = seconds.floatValue
         val start = withFrameNanos { it }
+        var shown = start
         while (true) {
-            withFrameNanos { seconds.floatValue = base + (it - start) / 1_000_000_000f }
+            withFrameNanos {
+                if (!calm || it - shown >= CALM_FRAME_NANOS) {
+                    shown = it
+                    seconds.floatValue = base + (it - start) / 1_000_000_000f
+                }
+            }
         }
     }
     return seconds

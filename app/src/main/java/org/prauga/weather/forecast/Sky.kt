@@ -19,17 +19,18 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.tan
 
-enum class Sky {
-    SUN,
-    GLOW,
-    CLOUDS,
-    OVERCAST,
-    RAIN,
-    DOWNPOUR,
-    STORM,
-    SNOW,
-    FOG,
-    STARS,
+/** What moves in a sky; a [calm] one only drifts, with nothing falling fast through it. */
+enum class Sky(val calm: Boolean) {
+    SUN(calm = true),
+    GLOW(calm = true),
+    CLOUDS(calm = true),
+    OVERCAST(calm = true),
+    RAIN(calm = false),
+    DOWNPOUR(calm = false),
+    STORM(calm = false),
+    SNOW(calm = false),
+    FOG(calm = true),
+    STARS(calm = true),
 }
 
 class SkyColors(val light: Color, val sun: Color, val shade: Color, val ink: Color)
