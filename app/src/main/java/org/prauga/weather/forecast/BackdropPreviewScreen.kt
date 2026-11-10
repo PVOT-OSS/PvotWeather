@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalContentColor
@@ -41,18 +39,11 @@ fun BackdropPreviewScreen(onBack: () -> Unit) {
     val background = MaterialTheme.colorScheme.background
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     PvotScreenScaffold(
-        background = {
-            WeatherBackdrop(
-                backdrop,
-                background,
-                isSystemInDarkTheme(),
-                Modifier.fillMaxWidth().fillMaxHeight(0.62f),
-            )
-        },
+        background = { WeatherBackdrop(backdrop, isSystemInDarkTheme(), Modifier.fillMaxSize()) },
         topBar = { PvotTopBar(stringResource(R.string.backdrops), onBack = onBack, compact = true) },
     ) { padding ->
         CompositionLocalProvider(
-            LocalContentColor provides MaterialTheme.colorScheme.onBackground
+            LocalContentColor provides backdrop.onSky(background, isSystemInDarkTheme())
         ) {
             Column(
                 Modifier.fillMaxSize().padding(padding).padding(bottom = bottom + PvotSpacing.L),

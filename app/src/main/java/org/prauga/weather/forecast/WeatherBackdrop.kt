@@ -22,6 +22,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
@@ -93,10 +96,45 @@ private val SkyShade = Color(0xFF1C2129)
 private val SkyInkLight = Color(0xFF6F93B5)
 private const val BLEND_MILLIS = 800
 
+/** How much of the sky the dark theme lets through; the rest is the theme background. */
+private const val DARK_SKY_ALPHA = 0.8f
+
+/** Text and icons drawn straight on a light sky. */
+private val SkyInkDark = Color(0xFF1A1C1E)
+
+/** The luminance that contrasts equally with black and with white (WCAG 2). */
+private const val MID_LUMINANCE = 0.18f
+
+/**
+ * Whether the top of this sky, drawn by [WeatherBackdrop] over [background], is light enough that
+ * dark status-bar icons read better on it than light ones.
+ *
+ * Approximates what the canvas paints under the status bar: the first colour, washed over the top
+ * and lifted by the first blob, dimmed in the dark theme like the canvas dims it.
+ */
+fun Backdrop.isLight(background: Color, dark: Boolean): Boolean =
+    top(background, dark).luminance() > MID_LUMINANCE
+
+/** The colour the canvas paints at the top of this sky, under the status bar. */
+fun Backdrop.top(background: Color, dark: Boolean): Color =
+    colors[0].copy(alpha = if (dark) DARK_SKY_ALPHA else 1f).compositeOver(background)
+
+/**
+ * The colour for text and icons drawn straight on this sky: white or near-black, whichever
+ * contrasts more with the sky's middle, where the place, temperature and hourly strip sit.
+ */
+fun Backdrop.onSky(background: Color, dark: Boolean): Color {
+    val alpha = if (dark) DARK_SKY_ALPHA else 1f
+    val middle = lerp(colors[0], colors[1], 0.5f).copy(alpha = alpha).compositeOver(background)
+    val sky = middle.luminance()
+    val onWhite = 1.05f / (sky + 0.05f)
+    val onInk = (sky + 0.05f) / (SkyInkDark.luminance() + 0.05f)
+    return if (onWhite >= onInk) Color.White else SkyInkDark
+}
+
 @Composable
 fun WeatherBackdrop(
     backdrop: Backdrop,
-    background: Color,
     dark: Boolean,
     modifier: Modifier = Modifier,
     running: Boolean = true,
@@ -122,7 +160,7 @@ fun WeatherBackdrop(
         fading = null
     }
     val path = remember { Path() }
-    val alpha = if (dark) 0.8f else 1f
+    val alpha = if (dark) DARK_SKY_ALPHA else 1f
     val colors =
         remember(dark) {
             SkyColors(
@@ -148,12 +186,20 @@ fun WeatherBackdrop(
                 )
             )
         }
+        // The palette painted over the whole canvas first, so the theme background never shows
+        // through between the blobs as they drift.
+        drawRect(
+            Brush.verticalGradient(
+                0f to first.copy(alpha = alpha),
+                0.5f to second.copy(alpha = alpha),
+                1f to third.copy(alpha = alpha),
+            )
+        )
         blob(third, 0.15f, 0.55f, 0.8f, 0.7f, 0f)
         blob(second, 0.85f, 0.2f, 0.85f, 0.85f, 2.1f)
         blob(first, 0.35f, 0.25f, 0.9f, 1f, 4.2f)
         fading?.let { drawSky(it, t, alpha * (1f - blend.value), colors, path) }
         drawSky(shown, t, alpha * blend.value, colors, path)
-        drawRect(Brush.verticalGradient(0.55f to Color.Transparent, 1f to background))
     }
 }
 
