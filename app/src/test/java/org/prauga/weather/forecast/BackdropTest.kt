@@ -37,6 +37,7 @@ class BackdropTest {
     @Test
     fun clearSkiesFollowTheSun() {
         assertEquals(Backdrop.NIGHT, of(Condition.CLEAR, isDay = false, now = midnight))
+        assertEquals(Backdrop.NIGHT_CLOUDY, of(Condition.CLOUDY, isDay = false, now = midnight))
         assertEquals(
             Backdrop.SUNRISE_SUNSET,
             of(Condition.CLEAR, now = sunset.minusSeconds(20 * 60)),
@@ -75,6 +76,7 @@ class BackdropTest {
     fun textOnTheSkyContrastsWithIt() {
         assertEquals(Color.White, Backdrop.NIGHT.onSky(Color.White, dark = false))
         assertEquals(Color.White, Backdrop.THUNDERSTORM.onSky(Color.Black, dark = true))
+        assertEquals(Color.White, Backdrop.NIGHT_CLOUDY.onSky(Color.Black, dark = true))
         assertNotEquals(Color.White, Backdrop.SNOW.onSky(Color.Black, dark = true))
         assertNotEquals(Color.White, Backdrop.CLOUDY.onSky(Color.Black, dark = true))
     }
